@@ -1,79 +1,122 @@
-import axios from 'axios';
+// src/api/api.js
+import axios from "axios";
 
-// Create axios instance with proper configuration
+// ✅ Create axios instance with proper configuration
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8081/api', // backend runs on port 8081
+  baseURL: "http://127.0.0.1:8081/api", // Spring Boot backend base path
   withCredentials: false,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  }
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
 });
-// Add request interceptor to include token
+
+// ✅ Request Interceptor: attach token unless it's an auth endpoint
 api.interceptors.request.use(
   (config) => {
-    // Don't attach Authorization header for auth endpoints (login/register/test)
-    const url = config.url || '';
-    const isAuthEndpoint = url.includes('/auth');
-    const token = localStorage.getItem('token');
-    if (!isAuthEndpoint && token) {
+    const token = localStorage.getItem("token");
+    const url = config.url || "";
+    const isAuthEndpoint =
+      url.includes("/auth") || url.includes("/login") || url.includes("/register");
+
+    if (token && !isAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Log request for debugging
-    console.log(`Making ${config.method?.toUpperCase()} request to: ${config.url} (authEndpoint=${isAuthEndpoint})`);
+    // Logging only during development
+    if (import.meta.env.MODE === "development") {
+      console.log(
+        `[API REQUEST] → ${config.method?.toUpperCase()} ${config.url}`,
+        config.data || ""
+      );
+    }
+
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    console.error("[API REQUEST ERROR]", error);
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor to handle errors
+// ✅ Response Interceptor: handle backend + network errors cleanly
 api.interceptors.response.use(
   (response) => {
-    console.log(`Response received: ${response.status}`, response.data);
+    if (import.meta.env.MODE === "development") {
+      console.log(
+        `[API RESPONSE] ← ${response.status} ${response.config.url}`,
+        response.data
+      );
+    }
     return response;
   },
   (error) => {
-    console.error('Response error:', error);
-    
+    console.error("[API RESPONSE ERROR]", error);
+
     if (error.response) {
-      // Server responded with error status
-      console.error('Error data:', error.response.data);
-      console.error('Error status:', error.response.status);
-      console.error('Error headers:', error.response.headers);
-      
-      if (error.response.status === 401) {
-        // Clear storage and redirect to login if token is invalid
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('username');
-        window.location.href = '/login';
+      const { status } = error.response;
+
+      switch (status) {
+        case 400:
+          toast.error("⚠️ Bad request. Check input data.");
+          break;
+        case 401:
+          console.warn("Token expired or unauthorized. Redirecting...");
+          localStorage.removeItem("token");
+          localStorage.removeItem("role");
+          localStorage.removeItem("username");
+          window.location.href = "/login";
+          break;
+        case 404:
+          console.error("🚫 Endpoint not found:", error.response.config?.url);
+          break;
+        case 500:
+          console.error("💥 Server error:", error.response.data?.message || "Internal error");
+          break;
+        default:
+          console.error(`⚠️ Unexpected error (status ${status}):`, error.response.data);
       }
     } else if (error.request) {
-      // Request was made but no response received
-      console.error('No response received:', error.request);
+      console.error("❌ No response from backend. Check if Spring Boot is running.");
     } else {
-      // Something else happened
-      console.error('Error message:', error.message);
+      console.error("⚙️ Request configuration error:", error.message);
     }
-    
+
     return Promise.reject(error);
   }
 );
 
-// Test function to check backend connection
+// ✅ Optional: Quick backend connection test
 export const testBackendConnection = async () => {
   try {
-    const response = await api.get('/auth/test');
-    console.log('Backend connection test successful:', response.data);
-    return { success: true, data: response.data };
+    const res = await api.get("/auth/test");
+    console.log("✅ Backend connected successfully:", res.data);
+    return { success: true, data: res.data };
+  } catch (err) {
+    console.error("❌ Backend connection failed:", err.message);
+    return { success: false, error: err.message };
+  }
+};
+
+// ✅ Dedicated endpoints for Bin Registration (optional helpers)
+export const registerBin = async (binData) => {
+  try {
+    const res = await api.post("/bins/register", binData);
+    return res.data;
   } catch (error) {
-    console.error('Backend connection test failed:', error);
-    return { success: false, error: error.message };
+    console.error("Error registering bin:", error);
+    throw error;
+  }
+};
+
+export const fetchAllBins = async () => {
+  try {
+    const res = await api.get("/bins");
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching bins:", error);
+    throw error;
   }
 };
 
