@@ -5,6 +5,15 @@ import { useNavigate } from "react-router-dom";
 export default function LandingPage() {
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+    // Navigate to login page
+    navigate('/login');
+  };
+
   return (
     <div className="bg-gradient-to-br from-emerald-50 to-green-50 text-gray-800 min-h-screen flex flex-col font-sans overflow-hidden">
       {/* 🔹 Navbar */}
@@ -22,7 +31,7 @@ export default function LandingPage() {
             <span className="text-white text-2xl">🗑️</span>
           </div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent">
-            Smart Waste
+            RecyLink
           </h1>
         </div>
 
@@ -39,10 +48,10 @@ export default function LandingPage() {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate("/register")}
-            className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
+            onClick={handleLogout}
+            className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2.5 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold"
           >
-            Get Started
+            Log Out
           </motion.button>
         </nav>
 
