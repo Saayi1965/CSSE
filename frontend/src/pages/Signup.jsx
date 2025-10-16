@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/api';
+import api, { testBackendConnection } from '../api/api';
 import '../styles/auth.css';
 import RecyLinkLogo from '../assets/RecyLink_Logo.png';
 
@@ -22,7 +22,7 @@ export default function Signup({ onAuth }) {
       
       const payload = {
         username: username.trim(),
-        password: password,
+        password: password.trim(),
         role: role
       };
       
@@ -95,7 +95,6 @@ export default function Signup({ onAuth }) {
             <div className="input-block">
               <label className="input-label">Role</label>
               <select value={role} onChange={e => setRole(e.target.value)}>
-                <option value="admin">Admin / Manager</option>
                 <option value="collector">Waste Collector</option>
                 <option value="residential">Residential User</option>
               </select>

@@ -1,72 +1,59 @@
+// src/main/java/com/csse/smartwaste/security/JwtFilter.java
 package com.csse.smartwaste.security;
 
-import io.jsonwebtoken.Claims;
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Collections;
 
-@Component
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final AntPathMatcher matcher = new AntPathMatcher();
 
     public JwtFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-                                    throws ServletException, IOException {
-
+    protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
+        // Don’t filter auth endpoints
+        return matcher.match("/api/auth/**", path);
+    }
 
-        // ✅ Skip JWT validation for public endpoints
-        if (path.startsWith("/api/auth") || path.equals("/api/ping")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+    @Override
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+            throws ServletException, IOException {
 
-        // 🔍 Log requests for debugging
-        System.out.println("[JwtFilter] Processing: " + path);
-
-        String header = request.getHeader("Authorization");
-
+        String header = req.getHeader(HttpHeaders.AUTHORIZATION);
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            try {
-                if (jwtUtil.validateToken(token)) {
-                    Claims claims = jwtUtil.parseClaims(token);
-                    String username = claims.getSubject();
-                    String role = claims.get("role", String.class);
+            if (jwtUtil.validateToken(token)) {
+                Claims claims = jwtUtil.parseClaims(token);
+                String username = claims.getSubject();
+                String role = String.valueOf(claims.get("role"));
 
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(
-                                    username,
-                                    null,
-                                    Collections.singletonList(new SimpleGrantedAuthority(role))
-                            );
-
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
-            } catch (Exception e) {
-                System.out.println("[JwtFilter] Invalid JWT token: " + e.getMessage());
+                var auth = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        role != null ? List.of(new SimpleGrantedAuthority(role)) : List.of()
+                );
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
-        } else {
-            // No token found — allow request through (will be blocked by SecurityConfig if needed)
-            System.out.println("[JwtFilter] No token for request: " + path);
         }
 
-        filterChain.doFilter(request, response);
+        chain.doFilter(req, res);
     }
 }

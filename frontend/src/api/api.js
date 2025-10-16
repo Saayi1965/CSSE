@@ -2,15 +2,14 @@ import axios from 'axios';
 
 // Create axios instance with proper configuration
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8081/api',
-  withCredentials: false, // Set to false to avoid CORS preflight issues
+  baseURL: 'http://127.0.0.1:8081/api', // backend runs on port 8081
+  withCredentials: false,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   }
 });
-
 // Add request interceptor to include token
 api.interceptors.request.use(
   (config) => {

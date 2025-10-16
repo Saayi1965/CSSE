@@ -1,3 +1,4 @@
+
 package com.csse.smartwaste.model;
 
 public enum Role {

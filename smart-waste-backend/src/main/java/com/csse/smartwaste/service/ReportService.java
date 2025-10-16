@@ -1,36 +1,84 @@
+// src/main/java/com/csse/smartwaste/service/ReportService.java
 package com.csse.smartwaste.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
-import com.csse.smartwaste.repository.CollectionRepository;
+
 import com.csse.smartwaste.model.Collection;
-import java.util.List;
+import com.csse.smartwaste.repository.CollectionRepository;
 
 @Service
-@RequiredArgsConstructor
 public class ReportService {
-  private final CollectionRepository repo;
 
-  public Map<String,Object> summary(LocalDate start, LocalDate end){
-    List<Collection> data = repo.findByDateBetween(start,end);
-    double total = data.stream().mapToDouble(Collection::getWeightKg).sum();
-    Map<String,Long> byType = data.stream().collect(Collectors.groupingBy(Collection::getWasteType,Collectors.counting()));
-    // simple recycling rate estimate: recyclables / total by count (placeholder)
-    long recyclables = byType.entrySet().stream().filter(e->e.getKey().toLowerCase().contains("recycl")).mapToLong(java.util.Map.Entry::getValue).sum();
-    int recyclingRate = data.isEmpty() ? 0 : (int)Math.round((recyclables * 100.0) / data.size());
-    String avgPerArea = String.format("%s t", Math.round((total / Math.max(1, 4)) * 10.0) / 10.0); // placeholder per 4 areas
-    return Map.of("totalWeight",total,"records",data.size(),"byType",byType,"recyclingRate",recyclingRate,"avgPerArea",avgPerArea);
-  }
+    private final CollectionRepository repo;
 
-  public byte[] exportCsv(LocalDate start, LocalDate end){
-    List<Collection> data = repo.findByDateBetween(start,end);
-    var byType = data.stream().collect(Collectors.groupingBy(Collection::getWasteType, Collectors.counting()));
-    StringBuilder lines = new StringBuilder("Type,Count\n");
-    byType.forEach((t,c)->lines.append(t).append(',').append(c).append('\n'));
-    return lines.toString().getBytes(StandardCharsets.UTF_8);
-  }
+    public ReportService(CollectionRepository repo) {
+        this.repo = repo;
+    }
+
+    public double totalWeight(LocalDate from, LocalDate to) {
+        List<Collection> list = repo.findByDateBetween(from, to);
+        return list.stream().mapToDouble(c -> c.getWeightKg()).sum();
+    }
+
+    public Map<String, Double> weightByType(LocalDate from, LocalDate to) {
+        List<Collection> list = repo.findByDateBetween(from, to);
+        return list.stream()
+                .collect(Collectors.groupingBy(
+                        c -> c.getWasteType(),
+                        Collectors.summingDouble(c -> c.getWeightKg())
+                ));
+    }
+
+    public Map<String, Long> countByType(LocalDate from, LocalDate to) {
+        List<Collection> list = repo.findByDateBetween(from, to);
+        return list.stream()
+                .collect(Collectors.groupingBy(
+                        c -> c.getWasteType(),
+                        Collectors.counting()
+                ));
+    }
+
+    /** ✅ NEW: matches controller usage */
+    public Map<String, Object> summary(LocalDate from, LocalDate to) {
+        double total = totalWeight(from, to);
+        Map<String, Double> byType = weightByType(from, to);
+        Map<String, Long> count = countByType(from, to);
+
+        return new LinkedHashMap<>() {{
+            put("from", from.toString());
+            put("to", to.toString());
+            put("totalWeightKg", total);
+            put("weightByType", byType);
+            put("countByType", count);
+        }};
+    }
+
+    /** ✅ NEW: matches controller usage; returns CSV bytes */
+    public byte[] exportCsv(LocalDate from, LocalDate to) {
+        List<Collection> list = repo.findByDateBetween(from, to);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("region,wasteType,weightKg,date\n");
+        for (Collection c : list) {
+            sb.append(escape(c.getRegion())).append(',')
+              .append(escape(c.getWasteType())).append(',')
+              .append(c.getWeightKg()).append(',')
+              .append(c.getDate() != null ? c.getDate() : "").append('\n');
+        }
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private String escape(String s) {
+        if (s == null) return "";
+        boolean needQuotes = s.contains(",") || s.contains("\"") || s.contains("\n");
+        String v = s.replace("\"", "\"\"");
+        return needQuotes ? "\"" + v + "\"" : v;
+    }
 }

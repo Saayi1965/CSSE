@@ -122,34 +122,38 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        String username = body.get("username");
-        String password = body.get("password");
-        
-        System.out.println("[AuthController] login called for username=" + username);
-        
-        // Validate input
-        if (username == null || username.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
-        }
-        if (password == null || password.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Password is required"));
-        }
-        
-        try {
-            Map<String,Object> res = authService.login(username.trim(), password);
-            System.out.println("[AuthController] login successful for username: " + username);
-            return ResponseEntity.ok(res);
-        } catch (IllegalArgumentException e) {
-            System.out.println("[AuthController] login failed for username " + username + ": " + e.getMessage());
-            return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            System.out.println("[AuthController] login unexpected error: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(Map.of("error", "Internal server error"));
-        }
+@PostMapping("/login")
+public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
+    String username = body.get("username");
+    String password = body.get("password");
+    
+    System.out.println("[AuthController] Login attempt - username: " + username);
+    
+    // Validate input
+    if (username == null || username.trim().isEmpty()) {
+        System.out.println("[AuthController] Validation failed: username is empty");
+        return ResponseEntity.badRequest().body(Map.of("error", "Username is required"));
     }
+    if (password == null || password.trim().isEmpty()) {
+        System.out.println("[AuthController] Validation failed: password is empty");
+        return ResponseEntity.badRequest().body(Map.of("error", "Password is required"));
+    }
+    
+    try {
+        System.out.println("[AuthController] Calling authService.login...");
+        Map<String,Object> res = authService.login(username.trim(), password);
+        System.out.println("[AuthController] Login successful for username: " + username);
+        System.out.println("[AuthController] Response: " + res);
+        return ResponseEntity.ok(res);
+    } catch (IllegalArgumentException e) {
+        System.out.println("[AuthController] Login failed: " + e.getMessage());
+        return ResponseEntity.status(401).body(Map.of("error", e.getMessage()));
+    } catch (Exception e) {
+        System.out.println("[AuthController] Unexpected error: " + e.getMessage());
+        e.printStackTrace();
+        return ResponseEntity.status(500).body(Map.of("error", "Internal server error: " + e.getMessage()));
+    }
+}
 
     @GetMapping("/test")
     public ResponseEntity<?> test() {
