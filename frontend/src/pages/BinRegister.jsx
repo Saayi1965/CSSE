@@ -1,4 +1,3 @@
-
 // src/pages/BinRegister.jsx
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -470,188 +469,186 @@ export default function BinRegister() {
                   type="button"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-onClick={getCurrentLocation}
-className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
->
-<span>📍</span>
-Use My Location
-</motion.button>
+                  onClick={getCurrentLocation}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                >
+                  <span>📍</span>
+                  Use My Location
+                </motion.button>
 
-            {formData.lat && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg">
-                <span>✅</span>
-                Location Set
+                {formData.lat && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                    <span>✅</span>
+                    Location Set
+                  </div>
+                )}
               </div>
+
+              <div className="rounded-xl overflow-hidden border-2 border-emerald-200 shadow-lg">
+                <MapContainer
+                  center={[6.9271, 79.8612]}
+                  zoom={13}
+                  style={{ height: "400px", width: "100%" }}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <LocationMarker />
+                </MapContainer>
+              </div>
+
+              {formData.lat && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                  <p className="text-emerald-700 font-semibold">
+                    📍 Selected Coordinates:
+                  </p>
+                  <p className="text-emerald-600">
+                    Latitude: {formData.lat.toFixed(6)}, Longitude:{" "}
+                    {formData.lng.toFixed(6)}
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between pt-6 border-t border-gray-200">
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={prevStep}
+              disabled={currentStep === 1}
+              className={`px-8 py-3 rounded-xl font-semibold transition ${
+                currentStep === 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-500 text-white hover:bg-gray-600"
+              }`}
+            >
+              ← Previous
+            </motion.button>
+
+            {currentStep < 3 ? (
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={nextStep}
+                className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition"
+              >
+                Next →
+              </motion.button>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isSubmitting || !formData.lat}
+                className={`px-8 py-3 rounded-xl font-semibold transition ${
+                  isSubmitting || !formData.lat
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-lg text-white"
+                }`}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Registering...
+                  </span>
+                ) : (
+                  "✅ Register Bin"
+                )}
+              </motion.button>
             )}
           </div>
+        </form>
+      </motion.div>
 
-          <div className="rounded-xl overflow-hidden border-2 border-emerald-200 shadow-lg">
-            <MapContainer
-              center={[6.9271, 79.8612]}
-              zoom={13}
-              style={{ height: "400px", width: "100%" }}
+      {/* Registered Bins Summary */}
+      {bins.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-12 w-full max-w-6xl"
+        >
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800">
+              Your Registered Bins ({bins.length})
+            </h2>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/bin-dashboard")}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition"
             >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <LocationMarker />
-            </MapContainer>
+              📊 View Dashboard
+            </motion.button>
           </div>
 
-          {formData.lat && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-              <p className="text-emerald-700 font-semibold">
-                📍 Selected Coordinates:
-              </p>
-              <p className="text-emerald-600">
-                Latitude: {formData.lat.toFixed(6)}, Longitude:{" "}
-                {formData.lng.toFixed(6)}
-              </p>
-            </div>
-          )}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {bins.map((bin, index) => (
+              <motion.div
+                key={bin.binId}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="bg-white p-6 rounded-2xl shadow-lg border border-emerald-100 hover:shadow-xl transition-all"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-bold text-emerald-700 capitalize">
+                    {bin.binType} Bin
+                  </h3>
+                  <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full font-semibold">
+                    {bin.binSize}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <p>
+                    <strong>ID:</strong> {bin.binId}
+                  </p>
+                  <p>
+                    <strong>Owner:</strong> {bin.ownerName}
+                  </p>
+                  <p>
+                    <strong>Type:</strong> {bin.residentType}
+                  </p>
+                  <p>
+                    <strong>Location:</strong>{" "}
+                    {bin.location || "Not specified"}
+                  </p>
+                  <p>
+                    <strong>Frequency:</strong> {bin.collectionFrequency}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Registered:{" "}
+                    {new Date(bin.registrationDate).toLocaleDateString()}
+                  </p>
+                </div>
+
+                {/* QR Code */}
+                <div className="flex flex-col items-center border-t pt-4">
+                  <p className="text-xs text-gray-500 mb-2">Scan for bin info</p>
+                  <QRCodeCanvas
+                    value={bin.qrData}
+                    size={80}
+                    bgColor="#ffffff"
+                    fgColor="#059669"
+                    level="H"
+                  />
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       )}
 
-      {/* Navigation Buttons */}
-      <div className="flex justify-between pt-6 border-t border-gray-200">
-        <motion.button
-          type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={prevStep}
-          disabled={currentStep === 1}
-          className={`px-8 py-3 rounded-xl font-semibold transition ${
-            currentStep === 1
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-gray-500 text-white hover:bg-gray-600"
-          }`}
-        >
-          ← Previous
-        </motion.button>
-
-        {currentStep < 3 ? (
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={nextStep}
-            className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition"
-          >
-            Next →
-          </motion.button>
-        ) : (
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            disabled={isSubmitting || !formData.lat}
-            className={`px-8 py-3 rounded-xl font-semibold transition ${
-              isSubmitting || !formData.lat
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-emerald-500 to-green-600 hover:shadow-lg text-white"
-            }`}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Registering...
-              </span>
-            ) : (
-              "✅ Register Bin"
-            )}
-          </motion.button>
-        )}
-      </div>
-    </form>
-  </motion.div>
-
-  {/* Registered Bins Summary */}
-  {bins.length > 0 && (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mt-12 w-full max-w-6xl"
-    >
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-800">
-          Your Registered Bins ({bins.length})
-        </h2>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/dashboard")}
-          className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition"
-        >
-          📊 View Dashboard
-        </motion.button>
-      </div>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {bins.map((bin, index) => (
-          <motion.div
-            key={bin.binId}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ y: -5, scale: 1.02 }}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-emerald-100 hover:shadow-xl transition-all"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-emerald-700 capitalize">
-                {bin.binType} Bin
-              </h3>
-              <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full font-semibold">
-                {bin.binSize}
-              </span>
-            </div>
-
-            <div className="space-y-2 text-sm text-gray-600 mb-4">
-              <p>
-                <strong>ID:</strong> {bin.binId}
-              </p>
-              <p>
-                <strong>Owner:</strong> {bin.ownerName}
-              </p>
-              <p>
-                <strong>Type:</strong> {bin.residentType}
-              </p>
-              <p>
-                <strong>Location:</strong>{" "}
-                {bin.location || "Not specified"}
-              </p>
-              <p>
-                <strong>Frequency:</strong> {bin.collectionFrequency}
-              </p>
-              <p className="text-xs text-gray-500">
-                Registered:{" "}
-                {new Date(bin.registrationDate).toLocaleDateString()}
-              </p>
-            </div>
-
-            {/* QR Code */}
-            <div className="flex flex-col items-center border-t pt-4">
-              <p className="text-xs text-gray-500 mb-2">Scan for bin info</p>
-              <QRCodeCanvas
-                value={bin.qrData}
-                size={80}
-                bgColor="#ffffff"
-                fgColor="#059669"
-                level="H"
-              />
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-  )}
-
-  <p className="text-gray-500 text-sm mt-12 text-center">
-    © 2024 Smart Waste Management System | Sustainable Solutions for
-    Cleaner Communities 🌱
-  </p>
-</div>
-
-
-);
+      <p className="text-gray-500 text-sm mt-12 text-center">
+        © 2024 Smart Waste Management System | Sustainable Solutions for
+        Cleaner Communities 🌱
+      </p>
+    </div>
+  );
 }
