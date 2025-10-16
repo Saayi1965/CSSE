@@ -76,5 +76,22 @@ export const testBackendConnection = async () => {
     return { success: false, error: error.message };
   }
 };
+// ✅ Get all bin statuses
+export const getBinStatus = async () => {
+  const res = await api.get("/bins/status");
+  return res.data;
+};
+
+// ✅ Record collection (after pickup)
+export const recordCollection = async (data) => {
+  const res = await api.post("/collect/record", data);
+  return res.data;
+};
+
+// ✅ Empty bin (after collection done)
+export const emptyBin = async (binId) => {
+  const res = await api.put(`/collect/empty/${binId}`);
+  return res.data;
+};
 
 export default api;

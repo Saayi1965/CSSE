@@ -12,6 +12,12 @@ import MonitorBinLevel from './pages/MonitorBinLevel';
 import UserDetails from './pages/UserDetails';
 import Analytics from './pages/Analytics';
 
+
+import RouteList from "./pages/Collector/RouteList";
+import MapView from "./pages/Collector/MapView";
+import QRScan from "./pages/Collector/QRScan";
+import UpdatePickup from "./pages/Collector/UpdatePickup";
+
 export default function App(){
   const [user, setUser] = useState(() => {
     const uname = localStorage.getItem('username');
@@ -44,6 +50,11 @@ export default function App(){
             <Route path="/monitor-bin-level" element={<MonitorBinLevel/>} />
             <Route path="/user-details" element={<UserDetails/>} />
             <Route path="/analytics" element={<Analytics/>} />
+          {/* ✅ Collector routes */}
+        <Route path="/collector/routes" element={<RouteList />} />
+        <Route path="/collector/map" element={<MapView />} />
+        <Route path="/collector/qr" element={<QRScan />} />
+        <Route path="/collector/update" element={<UpdatePickup />} />
           </Routes>
         </div>
       </div>
