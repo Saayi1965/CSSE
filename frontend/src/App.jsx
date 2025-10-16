@@ -12,6 +12,7 @@ import MonitorBinLevel from './pages/MonitorBinLevel';
 import UserDetails from './pages/UserDetails';
 import Analytics from './pages/Analytics';
 import BinRegister from './pages/BinRegister';
+import BinDashboard from './pages/BinDashboard';
 
 export default function App(){
   const [user, setUser] = useState(() => {
@@ -37,6 +38,7 @@ export default function App(){
         <Route path="/signup" element={<Signup onAuth={handleAuth} />} />
   <Route path="/user/dashboard" element={<LandingPage/>} />
   <Route path="/register" element={<BinRegister/>} />
+  <Route path="/bin-dashboard" element={<BinDashboard/>} />
 
         {/* Admin dashboard and features with sidebar */}
         <Route path="/admin/*" element={
