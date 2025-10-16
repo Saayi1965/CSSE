@@ -1,3 +1,8 @@
+/* Tailwind CSS */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Dashboard styles for frontend project */
 :root{
   --bg-1: #f5f9ff;
