@@ -11,6 +11,7 @@ import LandingPage from './pages/LandingPage';
 import MonitorBinLevel from './pages/MonitorBinLevel';
 import UserDetails from './pages/UserDetails';
 import Analytics from './pages/Analytics';
+import BinRegister from './pages/BinRegister';
 
 export default function App(){
   const [user, setUser] = useState(() => {
@@ -30,23 +31,48 @@ export default function App(){
 
   return (
     <BrowserRouter>
-      <div className="d-flex">
-      
-        <div className={`flex-grow-1 p-4 vh-100 overflow-auto ${user ? 'bg-light' : ''}`}>
-          <Routes>
-            <Route path="/" element={<Welcome/>} />
-            <Route path="/login" element={<Login onAuth={handleAuth} />} />
-            <Route path="/signup" element={<Signup onAuth={handleAuth} />} />
-            <Route path="/reports" element={<Reports/>} />
-            <Route path="/admin/dashboard" element={<AdminDashboard/>} />
-            <Route path="/collector/dashboard" element={<CollectorDashboard/>} />
-            <Route path="/user/dashboard" element={<LandingPage/>} />
-            <Route path="/monitor-bin-level" element={<MonitorBinLevel/>} />
-            <Route path="/user-details" element={<UserDetails/>} />
-            <Route path="/analytics" element={<Analytics/>} />
-          </Routes>
-        </div>
-      </div>
+      <Routes>
+        <Route path="/" element={<Welcome/>} />
+        <Route path="/login" element={<Login onAuth={handleAuth} />} />
+        <Route path="/signup" element={<Signup onAuth={handleAuth} />} />
+  <Route path="/user/dashboard" element={<LandingPage/>} />
+  <Route path="/register" element={<BinRegister/>} />
+
+        {/* Admin dashboard and features with sidebar */}
+        <Route path="/admin/*" element={
+          <div className="d-flex">
+            <Sidebar user={user} onLogout={logout} />
+            <div className="flex-grow-1 p-4 vh-100 overflow-auto bg-light">
+              <Routes>
+                <Route path="dashboard" element={<AdminDashboard/>} />
+                <Route path="reports" element={<Reports/>} />
+                <Route path="monitor-bin-level" element={<MonitorBinLevel/>} />
+                <Route path="user-details" element={<UserDetails/>} />
+                <Route path="analytics" element={<Analytics/>} />
+              </Routes>
+            </div>
+          </div>
+        } />
+
+        {/* Collector dashboard with sidebar (optional) */}
+        <Route path="/collector/*" element={
+          <div className="d-flex">
+            <Sidebar user={user} onLogout={logout} />
+            <div className="flex-grow-1 p-4 vh-100 overflow-auto bg-light">
+              <Routes>
+                <Route path="dashboard" element={<CollectorDashboard/>} />
+                {/* Add more collector routes here if needed */}
+              </Routes>
+            </div>
+          </div>
+        } />
+
+        {/* Other dashboard routes without sidebar */}
+        <Route path="/reports" element={<Reports/>} />
+        <Route path="/monitor-bin-level" element={<MonitorBinLevel/>} />
+        <Route path="/user-details" element={<UserDetails/>} />
+        <Route path="/analytics" element={<Analytics/>} />
+      </Routes>
     </BrowserRouter>
   );
 }
