@@ -1,0 +1,111 @@
+/* Dashboard styles for frontend project */
+:root{
+  --bg-1: #f5f9ff;
+  --bg-2: #ffffff;
+  --accent: #4A90E2;
+  --muted: #6b7280;
+}
+html,body,#root{height:100%;}
+body{
+  background: linear-gradient(180deg,var(--bg-1), var(--bg-2));
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  color:#21303a;
+}
+.container-fluid{padding:2rem 2.5rem;}
+.card{border-radius:14px; box-shadow: 0 8px 24px rgba(27,40,59,0.06); border:none}
+.stat-card{min-height:110px; display:flex; flex-direction:column; justify-content:center}
+.stat-card .h4{font-weight:700; color:#0f1724}
+.stat-accent{background:linear-gradient(90deg, rgba(74,144,226,0.06), rgba(80,227,194,0.03)); border-left:6px solid var(--accent)}
+.small{font-size:.82rem}
+.form-label.small{color:var(--muted)}
+.filter-card{background:transparent}
+.btn-primary{background:linear-gradient(90deg,#4A90E2,#50E3C2); border:none}
+.btn-outline-secondary{border-radius:10px}
+.table-responsive{margin-top:0.5rem}
+.table thead th{border-bottom: 1px solid #eef2f6; color:#334155}
+.table tbody tr:hover{background:#fbfdff}
+.p-2.border{border-color:#eef2f6}
+
+/* Circular progress tweaks */
+svg { display:block }
+
+/* Chart area */
+.card .mb-3 h6{font-weight:600}
+
+@media (max-width:768px){
+  .container-fluid{padding:1rem}
+  .stat-card{min-height:76px}
+}
+body { background: linear-gradient(180deg,#f3f7fb 0%, #ffffff 100%); font-family: Inter, system-ui, -apple-system, 'Helvetica Neue', Arial; }
+.card { border-radius: 12px; box-shadow: 0 6px 18px rgba(20,30,60,0.06); border: none; }
+.stat-card { min-height: 96px; display:flex; flex-direction:column; justify-content:center; }
+.stat-accent { background: linear-gradient(90deg,#f5fbff,#eef9f6); border-left: 6px solid #4A90E2; }
+.sidebar { min-width: 250px; background: #ffffff; }
+.small { font-size: 0.85rem; }
+.table thead th { border-bottom: 2px solid #f1f3f5; }
+.table td, .table th { vertical-align:middle; }
+.btn { border-radius:8px; }
+
+/* Responsive tweaks */
+@media (max-width: 768px){
+	.stat-card { min-height: 84px; }
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #F9FAFB;
+  color: #1E293B;
+}
+
+.card, .rounded-3 {
+  border-radius: 12px !important;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10B981, #4A90E2);
+  border: none;
+  transition: 0.2s ease-in;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #4A90E2, #10B981);
+}
+
+.shadow-sm {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.05) !important;
+}
+
+/* Hero / Welcome styles */
+.hero-wrap{
+  min-height: 72vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.hero-card{
+  display:flex;
+  gap:2rem;
+  align-items:center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.9), #ffffff);
+  padding: 2.5rem;
+  border-radius: 16px;
+}
+.hero-visual{ width:320px; max-width:38%; }
+.hero-visual img{ width:100%; border-radius:12px; box-shadow: 0 12px 30px rgba(10,30,60,0.08); }
+.hero-content{ max-width:52%; }
+.hero-title{ font-size:2rem; font-weight:700; color:#0f1724 }
+.hero-sub{ color: #475569; margin-top:0.5rem }
+
+/* Animated entrance */
+.fade-in-up{ opacity:0; transform: translateY(12px); animation: fadeUp 600ms ease forwards; }
+.fade-delay-1{ animation-delay:120ms }
+.fade-delay-2{ animation-delay:240ms }
+.fade-delay-3{ animation-delay:360ms }
+@keyframes fadeUp{ to{ opacity:1; transform: translateY(0); } }
+
+/* Form/card visuals */
+.auth-card{ max-width:520px; margin:auto; padding:2rem; border-radius:14px; }
+.auth-illustration{ width:140px; margin-right:1rem; }
+.auth-illustration img{ width:100%; border-radius:12px }
+
+
