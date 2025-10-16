@@ -7,7 +7,7 @@ import Signup from './pages/Signup';
 import Welcome from './pages/Welcome';
 import AdminDashboard from './pages/AdminDashboard';
 import CollectorDashboard from './pages/CollectorDashboard';
-import UserDashboard from './pages/UserDashboard';
+import LandingPage from './pages/LandingPage';
 import MonitorBinLevel from './pages/MonitorBinLevel';
 import UserDetails from './pages/UserDetails';
 import Analytics from './pages/Analytics';
@@ -31,7 +31,7 @@ export default function App(){
   return (
     <BrowserRouter>
       <div className="d-flex">
-        {user && <Sidebar user={user} onLogout={logout} />}
+      
         <div className={`flex-grow-1 p-4 vh-100 overflow-auto ${user ? 'bg-light' : ''}`}>
           <Routes>
             <Route path="/" element={<Welcome/>} />
@@ -40,7 +40,7 @@ export default function App(){
             <Route path="/reports" element={<Reports/>} />
             <Route path="/admin/dashboard" element={<AdminDashboard/>} />
             <Route path="/collector/dashboard" element={<CollectorDashboard/>} />
-            <Route path="/user/dashboard" element={<UserDashboard/>} />
+            <Route path="/user/dashboard" element={<LandingPage/>} />
             <Route path="/monitor-bin-level" element={<MonitorBinLevel/>} />
             <Route path="/user-details" element={<UserDetails/>} />
             <Route path="/analytics" element={<Analytics/>} />
@@ -50,3 +50,4 @@ export default function App(){
     </BrowserRouter>
   );
 }
+
