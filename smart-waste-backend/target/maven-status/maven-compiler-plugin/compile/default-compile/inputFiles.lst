@@ -1,5 +1,6 @@
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\controller\DebugController.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\controller\UserController.java
+C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\repository\BinRepository.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\service\AuthService.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\service\impl\AuthServiceImpl.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\model\User.java
@@ -10,9 +11,14 @@ C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\css
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\repository\CollectionRepository.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\SmartWasteApplication.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\config\SecurityConfig.java
+C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\service\BinServiceImpl.java
+C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\config\WebConfig.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\controller\HealthController.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\model\Role.java
+C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\service\BinService.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\repository\UserRepository.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\controller\AuthController.java
+C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\model\Bin.java
+C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\controller\BinController.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\controller\ReportController.java
 C:\Users\HP\OneDrive\Desktop\CSSE\CSSE\smart-waste-backend\src\main\java\com\csse\smartwaste\config\DataSeeder.java

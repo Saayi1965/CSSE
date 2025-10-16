@@ -25,6 +25,7 @@ public class SecurityConfig {
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
+
     @Value("${app.jwt.expiration-ms}")
     private long jwtExpirationMs;
 
@@ -41,30 +42,51 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtFilter jwtFilter) throws Exception {
         http
+            // ✅ Disable CSRF for REST APIs
             .csrf(csrf -> csrf.disable())
+
+            // ✅ CORS configuration (for your React frontend)
             .cors(cors -> cors.configurationSource(request -> {
-                var c = new CorsConfiguration();
-                c.setAllowedOrigins(List.of("http://localhost:3000","http://127.0.0.1:3000"));
-                c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","PATCH","OPTIONS"));
-                c.setAllowedHeaders(List.of("Authorization","Content-Type","Accept"));
-                c.setAllowCredentials(true);
-                c.setMaxAge(3600L);
-                return c;
+                var config = new CorsConfiguration();
+                config.setAllowedOrigins(List.of(
+                    "http://localhost:3000",
+                    "http://127.0.0.1:3000"
+                ));
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+                config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+                config.setAllowCredentials(true);
+                config.setMaxAge(3600L);
+                return config;
             }))
+
+            // ✅ Authorization rules
             .authorizeHttpRequests(auth -> auth
+                // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
+
+                // 🟢 Allow all bin operations without authentication
+                .requestMatchers("/api/bins/**").permitAll()
+
+                // Allow browser preflight
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // Everything else needs authentication
                 .anyRequest().authenticated()
             )
+
+            // ✅ Basic HTTP (optional for testing)
             .httpBasic(Customizer.withDefaults());
 
-        // Register JWT filter
+        // ✅ Add JWT filter before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
