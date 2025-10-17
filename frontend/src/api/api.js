@@ -1,9 +1,13 @@
-// src/api/api.js
 import axios from "axios";
+import toast from "react-hot-toast";
+
+// ✅ Dynamic backend URL (local → production switch ready)
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8081/api";
 
 // ✅ Create axios instance with proper configuration
 const api = axios.create({
-  baseURL: "http://127.0.0.1:8081/api", // Spring Boot backend base path
+  baseURL: BASE_URL,
   withCredentials: false,
   timeout: 10000,
   headers: {
@@ -24,10 +28,11 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Logging only during development
+    // Log API requests in development mode
     if (import.meta.env.MODE === "development") {
       console.log(
-        `[API REQUEST] → ${config.method?.toUpperCase()} ${config.url}`,
+        `%c[API REQUEST] → ${config.method?.toUpperCase()} ${config.url}`,
+        "color: cyan;",
         config.data || ""
       );
     }
@@ -40,12 +45,13 @@ api.interceptors.request.use(
   }
 );
 
-// ✅ Response Interceptor: handle backend + network errors cleanly
+// ✅ Response Interceptor: handle backend + network errors
 api.interceptors.response.use(
   (response) => {
     if (import.meta.env.MODE === "development") {
       console.log(
-        `[API RESPONSE] ← ${response.status} ${response.config.url}`,
+        `%c[API RESPONSE] ← ${response.status} ${response.config.url}`,
+        "color: green;",
         response.data
       );
     }
@@ -59,35 +65,43 @@ api.interceptors.response.use(
 
       switch (status) {
         case 400:
-          toast.error("⚠️ Bad request. Check input data.");
+          toast.error("⚠️ Bad request. Please check your input fields.");
           break;
+
         case 401:
-          console.warn("Token expired or unauthorized. Redirecting...");
+          toast.error("🔒 Session expired. Please log in again.");
           localStorage.removeItem("token");
           localStorage.removeItem("role");
           localStorage.removeItem("username");
           window.location.href = "/login";
           break;
+
         case 404:
-          console.error("🚫 Endpoint not found:", error.response.config?.url);
+          toast.error("🚫 Requested resource not found.");
           break;
+
         case 500:
-          console.error("💥 Server error:", error.response.data?.message || "Internal error");
+          toast.error(
+            "💥 Server error. Please try again later or check backend logs."
+          );
           break;
+
         default:
-          console.error(`⚠️ Unexpected error (status ${status}):`, error.response.data);
+          toast.error(
+            `⚠️ Unexpected error (status ${status}). Check console for details.`
+          );
       }
     } else if (error.request) {
-      console.error("❌ No response from backend. Check if Spring Boot is running.");
+      toast.error("❌ No response from backend. Check if Spring Boot is running.");
     } else {
-      console.error("⚙️ Request configuration error:", error.message);
+      toast.error("⚙️ Request setup error: " + error.message);
     }
 
     return Promise.reject(error);
   }
 );
 
-// ✅ Optional: Quick backend connection test
+// ✅ Quick backend connectivity test
 export const testBackendConnection = async () => {
   try {
     const res = await api.get("/auth/test");
@@ -99,10 +113,15 @@ export const testBackendConnection = async () => {
   }
 };
 
-// ✅ Dedicated endpoints for Bin Registration (optional helpers)
+//
+// 🗑️ BIN MANAGEMENT ENDPOINTS
+//
+
+// ✅ Create (Register) a new Bin
 export const registerBin = async (binData) => {
   try {
     const res = await api.post("/bins/register", binData);
+    toast.success("🗑️ Bin registered successfully!");
     return res.data;
   } catch (error) {
     console.error("Error registering bin:", error);
@@ -110,12 +129,47 @@ export const registerBin = async (binData) => {
   }
 };
 
+// ✅ Read (Fetch all bins)
 export const fetchAllBins = async () => {
   try {
     const res = await api.get("/bins");
     return res.data;
   } catch (error) {
     console.error("Error fetching bins:", error);
+    throw error;
+  }
+};
+
+// ✅ Read (Fetch single bin by ID)
+export const fetchBinById = async (id) => {
+  try {
+    const res = await api.get(`/bins/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching bin by ID:", error);
+    throw error;
+  }
+};
+
+// ✅ Update existing Bin
+export const updateBin = async (id, updatedData) => {
+  try {
+    const res = await api.put(`/bins/${id}`, updatedData);
+    toast.success("✅ Bin updated successfully!");
+    return res.data;
+  } catch (error) {
+    console.error("Error updating bin:", error);
+    throw error;
+  }
+};
+
+// ✅ Delete a Bin
+export const deleteBin = async (id) => {
+  try {
+    await api.delete(`/bins/${id}`);
+    toast.success("🗑️ Bin deleted successfully!");
+  } catch (error) {
+    console.error("Error deleting bin:", error);
     throw error;
   }
 };

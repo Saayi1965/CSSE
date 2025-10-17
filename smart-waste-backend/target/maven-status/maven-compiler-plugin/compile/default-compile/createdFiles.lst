@@ -6,7 +6,6 @@ com\csse\smartwaste\service\BinService.class
 com\csse\smartwaste\config\DataSeeder.class
 com\csse\smartwaste\security\JwtFilter.class
 com\csse\smartwaste\controller\HealthController.class
-com\csse\smartwaste\service\BinServiceImpl.class
 com\csse\smartwaste\config\WebConfig$1.class
 com\csse\smartwaste\SmartWasteApplication.class
 com\csse\smartwaste\config\SecurityConfig.class
@@ -22,6 +21,7 @@ com\csse\smartwaste\service\ReportService.class
 com\csse\smartwaste\model\Bin.class
 com\csse\smartwaste\controller\UserController.class
 com\csse\smartwaste\service\impl\AuthServiceImpl.class
+com\csse\smartwaste\service\impl\BinServiceImpl.class
 com\csse\smartwaste\controller\ReportController.class
 com\csse\smartwaste\model\User.class
 com\csse\smartwaste\repository\CollectionRepository.class

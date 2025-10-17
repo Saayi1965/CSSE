@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Bin {
 
     @Id
-    private String id;
+    private String id; // MongoDB _id
 
     private String binId;
     private String ownerName;

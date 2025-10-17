@@ -6,5 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface BinRepository extends MongoRepository<Bin, String> {
-    boolean existsByBinId(String binId);
+    Bin findByBinId(String binId);
+    void deleteByBinId(String binId);
 }
