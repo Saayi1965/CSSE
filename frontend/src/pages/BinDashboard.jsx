@@ -39,19 +39,22 @@ L.Icon.Default.mergeOptions({
 // ---------- Colored markers by binType ----------
 const getMarkerIcon = (binType) => {
   const colorMap = {
-    general: "808080",
-    recyclable: "10B981",
-    organic: "D97706",
-    plastic: "2563EB",
-    electronic: "7C3AED",
-    hazardous: "DC2626",
+    general: "grey",
+    recyclable: "green",
+    organic: "orange",
+    plastic: "blue",
+    electronic: "violet",
+    hazardous: "red",
   };
-  const hex = colorMap[binType] || "64748B";
+  const color = colorMap[binType] || "grey";
   return new L.Icon({
-    iconUrl: `https://chart.googleapis.com/chart?chst=d_map_pin_letter&chld=%E2%80%A2|${hex}`,
-    iconSize: [30, 40],
-    iconAnchor: [15, 40],
-    popupAnchor: [0, -36],
+    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
+    shadowUrl:
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
   });
 };
 
