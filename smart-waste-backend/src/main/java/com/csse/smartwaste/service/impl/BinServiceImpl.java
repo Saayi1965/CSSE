@@ -4,7 +4,7 @@ import com.csse.smartwaste.model.Bin;
 import com.csse.smartwaste.repository.BinRepository;
 import com.csse.smartwaste.service.BinService;
 import org.springframework.stereotype.Service;
-
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -18,6 +18,19 @@ public class BinServiceImpl implements BinService {
 
     @Override
     public Bin registerBin(Bin bin) {
+        // ✅ Validate essential data
+        if (bin.getLatitude() == 0 || bin.getLongitude() == 0) {
+            throw new IllegalArgumentException("Latitude and Longitude are required.");
+        }
+
+        // ✅ Generate binId if missing
+        if (bin.getBinId() == null || bin.getBinId().isEmpty()) {
+            bin.setBinId("BIN-" + System.currentTimeMillis());
+        }
+
+        // ✅ Auto-fill computed fields
+        bin.prepareForSave();
+
         return binRepository.save(bin);
     }
 
@@ -28,29 +41,41 @@ public class BinServiceImpl implements BinService {
 
     @Override
     public Bin getBinById(String id) {
-        // Try both MongoDB _id and binId
-        return binRepository.findById(id).orElse(binRepository.findByBinId(id));
+        return binRepository.findById(id).orElse(binRepository.findByBinId(id).orElse(null));
     }
 
     @Override
     public Bin updateBin(String id, Bin updatedBin) {
-        // Try to find the existing bin
-        Bin existing = binRepository.findById(id).orElse(binRepository.findByBinId(id));
+        Bin existing = binRepository.findById(id)
+                .orElse(binRepository.findByBinId(id).orElse(null));
+
         if (existing == null) return null;
 
-        // ✅ Preserve Mongo _id and key data
+        // ✅ Preserve MongoDB _id & unique binId
         updatedBin.setId(existing.getId());
-        if (updatedBin.getBinId() == null) updatedBin.setBinId(existing.getBinId());
-        if (updatedBin.getQrData() == null) updatedBin.setQrData(existing.getQrData());
-        if (updatedBin.getRegistrationDate() == null) updatedBin.setRegistrationDate(existing.getRegistrationDate());
-        if (updatedBin.getNextCollection() == null) updatedBin.setNextCollection(existing.getNextCollection());
+        updatedBin.setBinId(existing.getBinId());
+
+        // ✅ Refresh auto fields (QR, location, etc.)
+        updatedBin.prepareForSave();
+
+        // ✅ Keep original registration date
+        if (updatedBin.getRegistrationDate() == null) {
+            updatedBin.setRegistrationDate(existing.getRegistrationDate());
+        }
+
+        // ✅ Update next collection if not set
+        if (updatedBin.getNextCollection() == null) {
+            updatedBin.setNextCollection(LocalDateTime.now().plusWeeks(1));
+        }
 
         return binRepository.save(updatedBin);
     }
 
     @Override
     public void deleteBin(String id) {
-        Bin existing = binRepository.findById(id).orElse(binRepository.findByBinId(id));
+        Bin existing = binRepository.findById(id)
+                .orElse(binRepository.findByBinId(id).orElse(null));
+
         if (existing != null) {
             binRepository.delete(existing);
         }

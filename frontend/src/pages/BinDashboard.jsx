@@ -1,5 +1,5 @@
 // src/pages/BinDashboard.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import toast, { Toaster } from "react-hot-toast";
@@ -16,15 +16,18 @@ import {
   Phone,
   Mail,
   BarChart3,
+  Crosshair,
+  Map as MapIcon,
+  LocateFixed,
 } from "lucide-react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-// ✅ Import API functions
 import api, { updateBin, deleteBin } from "../api/api";
 
-// ✅ Fix missing default Leaflet icons
+// ---------- Leaflet default icon fix ----------
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -33,7 +36,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// ✅ Custom bin-type color markers
+// ---------- Colored markers by binType ----------
 const getMarkerIcon = (binType) => {
   const colorMap = {
     general: "808080",
@@ -52,8 +55,15 @@ const getMarkerIcon = (binType) => {
   });
 };
 
+// ---------- Small helpers ----------
+const fmtCoord = (n) => (typeof n === "number" ? n.toFixed(5) : "");
+const recomputeQR = (binId, binType, lat, lng) =>
+  `SMARTWASTE:${binId}:${binType}:${Number(lat || 0).toFixed(6)}:${Number(lng || 0).toFixed(6)}`;
+
+const FALLBACK_CENTER = [6.9271, 79.8612]; // Colombo
+
 export default function BinDashboard() {
-  // 🧩 State management
+  // ---------------- State ----------------
   const [bins, setBins] = useState([]);
   const [filter, setFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -62,15 +72,19 @@ export default function BinDashboard() {
   const [mapView, setMapView] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Fetch bins from backend
+  // location picker modal
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [draftLocation, setDraftLocation] = useState({ lat: null, lng: null });
+
+  // ---------------- Load bins ----------------
   useEffect(() => {
     const loadBins = async () => {
       try {
         const res = await api.get("/bins");
         const normalized = (res.data || []).map((b) => ({
           ...b,
-          id: b._id?.$oid || b._id || b.binId,
-          fillLevel: b.fillLevel ?? Math.floor(Math.random() * 40),
+          id: b._id?.$oid || b._id || b.binId, // stable key
+          fillLevel: typeof b.fillLevel === "number" ? b.fillLevel : Math.floor(Math.random() * 40),
           status: b.status || "active",
         }));
         setBins(normalized);
@@ -83,7 +97,7 @@ export default function BinDashboard() {
     loadBins();
   }, []);
 
-  // 🕒 Auto simulate fill-level change
+  // ---------------- Simulate fill levels (optional) ----------------
   useEffect(() => {
     const interval = setInterval(() => {
       setBins((prev) =>
@@ -96,20 +110,22 @@ export default function BinDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // 🔍 Filter + Sort logic
-  const filteredAndSortedBins = bins
-    .filter((b) => {
-      const q = searchQuery.toLowerCase();
+  // ---------------- Filtering & sorting ----------------
+  const filteredAndSortedBins = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = bins.filter((b) => {
       const matchesSearch =
-        b.binId?.toLowerCase().includes(q) ||
-        b.residentName?.toLowerCase().includes(q) ||
-        b.ownerName?.toLowerCase().includes(q) ||
-        b.residentType?.toLowerCase().includes(q) ||
-        b.location?.toLowerCase().includes(q);
+        (b.binId || "").toLowerCase().includes(q) ||
+        (b.residentName || "").toLowerCase().includes(q) ||
+        (b.ownerName || "").toLowerCase().includes(q) ||
+        (b.residentType || "").toLowerCase().includes(q) ||
+        (b.location || "").toLowerCase().includes(q) ||
+        (b.address || "").toLowerCase().includes(q);
       const matchesFilter = filter === "all" || b.binType === filter;
       return matchesSearch && matchesFilter;
-    })
-    .sort((a, b) => {
+    });
+
+    const sorted = filtered.sort((a, b) => {
       switch (sortBy) {
         case "name-asc":
           return (a.residentName || "").localeCompare(b.residentName || "");
@@ -118,14 +134,18 @@ export default function BinDashboard() {
         case "fill-level":
           return (b.fillLevel || 0) - (a.fillLevel || 0);
         case "oldest":
-          return new Date(a.registrationDate) - new Date(b.registrationDate);
+          return new Date(a.registrationDate || 0) - new Date(b.registrationDate || 0);
         default:
-          return new Date(b.registrationDate) - new Date(a.registrationDate);
+          // newest
+          return new Date(b.registrationDate || 0) - new Date(a.registrationDate || 0);
       }
     });
 
-  // 📊 Dashboard statistics
-  const stats = {
+    return sorted;
+  }, [bins, filter, sortBy, searchQuery]);
+
+  // ---------------- Stats ----------------
+  const stats = useMemo(() => ({
     total: bins.length,
     active: bins.filter((b) => b.status === "active").length,
     full: bins.filter((b) => (b.fillLevel || 0) >= 80).length,
@@ -133,10 +153,12 @@ export default function BinDashboard() {
     byType: {
       recyclable: bins.filter((b) => b.binType === "recyclable").length,
       organic: bins.filter((b) => b.binType === "organic").length,
+      plastic: bins.filter((b) => b.binType === "plastic").length,
+      general: bins.filter((b) => b.binType === "general").length,
     },
-  };
+  }), [bins]);
 
-  // 🎯 Priority indicator
+  // ---------------- Priority badge ----------------
   const getPriority = (bin) => {
     const l = bin.fillLevel || 0;
     if (l >= 90) return { color: "red", label: "Urgent" };
@@ -144,13 +166,12 @@ export default function BinDashboard() {
     return { color: "green", label: "Active" };
   };
 
-  // 🗑️ Delete Bin (backend integrated)
+  // ---------------- Delete ----------------
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this bin?")) return;
-
     try {
-      await deleteBin(id); // ✅ Call backend DELETE /api/bins/{id}
-      setBins(bins.filter((b) => b.binId !== id));
+      await deleteBin(id);
+      setBins((prev) => prev.filter((b) => b.binId !== id));
       toast.success(`🗑️ Bin ${id} deleted successfully!`);
     } catch (err) {
       console.error("Error deleting bin:", err);
@@ -158,19 +179,111 @@ export default function BinDashboard() {
     }
   };
 
-  // ✏️ Edit Bin (backend integrated)
-  const handleEdit = (b) => setEditBin({ ...b });
+  // ---------------- Edit modal ----------------
+  const handleEdit = (b) => {
+    setEditBin({ ...b });
+    setDraftLocation({
+      lat: typeof b.latitude === "number" ? b.latitude : null,
+      lng: typeof b.longitude === "number" ? b.longitude : null,
+    });
+  };
 
+  // open location picker
+  const openLocationPicker = () => {
+    if (!editBin) return;
+    setDraftLocation({
+      lat: typeof editBin.latitude === "number" ? editBin.latitude : null,
+      lng: typeof editBin.longitude === "number" ? editBin.longitude : null,
+    });
+    setLocationPickerOpen(true);
+  };
+
+  // Use my location in picker
+  const useMyLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported on this device.");
+      return;
+    }
+    toast.loading("Detecting your location...");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        toast.dismiss();
+        setDraftLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+        toast.success("📍 Location set.");
+      },
+      (err) => {
+        toast.dismiss();
+        console.error(err);
+        toast.error("Unable to get current location.");
+      }
+    );
+  };
+
+  // confirm location pick
+  const confirmLocationPick = () => {
+    if (!editBin) return;
+    const { lat, lng } = draftLocation;
+    // Update editBin silently; do not show coords in UI
+    const locText =
+      typeof lat === "number" && typeof lng === "number"
+        ? `Auto-detected at ${fmtCoord(lat)}, ${fmtCoord(lng)}`
+        : editBin.location || "—";
+
+    setEditBin((prev) => ({
+      ...prev,
+      latitude: lat ?? prev.latitude,
+      longitude: lng ?? prev.longitude,
+      location: locText,
+    }));
+    setLocationPickerOpen(false);
+  };
+
+  // cancel picker
+  const cancelLocationPick = () => setLocationPickerOpen(false);
+
+  // Save changes (recompute QR if binType or coords changed)
   const handleSave = async () => {
-    if (!editBin.residentName?.trim()) {
+    if (!editBin?.residentName?.trim()) {
       toast.error("Resident name is required");
+      return;
+    }
+    if (!editBin?.phone?.match(/^\+?[\d\s-()]{10,}$/)) {
+      toast.error("📱 Enter a valid phone number");
       return;
     }
 
     try {
-      const id = editBin.binId || editBin.id;
-      const res = await updateBin(id, editBin); // ✅ Call backend PUT /api/bins/{id}
-      setBins(bins.map((b) => (b.binId === id ? res : b)));
+      const original = bins.find((x) => x.binId === editBin.binId) || {};
+      const lat = typeof editBin.latitude === "number" ? editBin.latitude : original.latitude;
+      const lng = typeof editBin.longitude === "number" ? editBin.longitude : original.longitude;
+      const type = editBin.binType || original.binType || "general";
+
+      // If binType or coords changed vs original, recompute QR
+      const mustRegenQR =
+        original.binType !== type ||
+        Number(original.latitude ?? 0).toFixed(6) !== Number(lat ?? 0).toFixed(6) ||
+        Number(original.longitude ?? 0).toFixed(6) !== Number(lng ?? 0).toFixed(6);
+
+      const payload = {
+        ...editBin,
+        latitude: lat,
+        longitude: lng,
+        qrData: mustRegenQR ? recomputeQR(editBin.binId, type, lat, lng) : editBin.qrData,
+      };
+
+      const saved = await updateBin(editBin.binId, payload);
+      // Normalize saved (some backends return without _id)
+      const normalized = {
+        ...saved,
+        id: saved._id?.$oid || saved._id || saved.binId,
+        fillLevel: typeof saved.fillLevel === "number" ? saved.fillLevel : original.fillLevel || 0,
+        status: saved.status || original.status || "active",
+      };
+
+      setBins((prev) => prev.map((b) => (b.binId === normalized.binId ? normalized : b)));
       setEditBin(null);
       toast.success("✅ Bin updated successfully!");
     } catch (err) {
@@ -179,7 +292,7 @@ export default function BinDashboard() {
     }
   };
 
-  // 🎟️ QR download
+  // ---------------- QR download ----------------
   const downloadQR = (bin) => {
     const canvas = document.getElementById(`qr-${bin.binId}`);
     if (!canvas) return;
@@ -190,12 +303,18 @@ export default function BinDashboard() {
     toast.success(`🎟️ QR downloaded for ${bin.binId}`);
   };
 
-  // 🔄 Refresh
+  // ---------------- Refresh ----------------
   const refreshData = async () => {
     setIsLoading(true);
     try {
       const res = await api.get("/bins");
-      setBins(res.data);
+      const normalized = (res.data || []).map((b) => ({
+        ...b,
+        id: b._id?.$oid || b._id || b.binId,
+        fillLevel: typeof b.fillLevel === "number" ? b.fillLevel : Math.floor(Math.random() * 40),
+        status: b.status || "active",
+      }));
+      setBins(normalized);
       toast.success("🔄 Dashboard refreshed!");
     } catch {
       toast.error("⚠️ Failed to refresh data.");
@@ -204,14 +323,14 @@ export default function BinDashboard() {
     }
   };
 
-  // 📏 Fill-level bar component
+  // ---------------- UI bits ----------------
   const FillBar = ({ level }) => (
     <div className="w-full bg-gray-200 h-2 rounded-full">
       <div
         className={`h-2 rounded-full transition-all ${
-          level >= 90
+          (level || 0) >= 90
             ? "bg-red-500"
-            : level >= 70
+            : (level || 0) >= 70
             ? "bg-orange-500"
             : "bg-green-500"
         }`}
@@ -247,7 +366,7 @@ export default function BinDashboard() {
                   : "bg-white text-gray-700 border-gray-300"
               }`}
             >
-              <MapPin size={16} className="inline mr-2" />
+              <MapIcon size={16} className="inline mr-2" />
               {mapView ? "Dashboard View" : "Map View"}
             </button>
             <button
@@ -267,12 +386,42 @@ export default function BinDashboard() {
             </button>
           </div>
         </div>
+
+        {/* Stats (only in dashboard view) */}
+        {!mapView && (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+            {[
+              { label: "Total Bins", value: stats.total, icon: "🗑️" },
+              { label: "Active", value: stats.active, icon: "✅" },
+              { label: "Nearly Full", value: stats.full, icon: "⚠️" },
+              { label: "Urgent", value: stats.urgent, icon: "🚨" },
+              { label: "Recyclable", value: stats.byType.recyclable, icon: "♻️" },
+              { label: "Organic", value: stats.byType.organic, icon: "🌱" },
+            ].map((s, i) => (
+              <motion.div
+                key={s.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-center"
+              >
+                <p className="text-2xl font-bold">{s.value}</p>
+                <p className="text-sm text-gray-600">{s.label}</p>
+                <p className="text-xl">{s.icon}</p>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       {/* Map or Dashboard */}
       {mapView ? (
         <div className="border rounded-2xl overflow-hidden shadow-md">
-          <MapContainer center={[6.9271, 79.8612]} zoom={12} style={{ height: "75vh" }}>
+          <MapContainer
+            center={bins.length ? [bins[0].latitude || FALLBACK_CENTER[0], bins[0].longitude || FALLBACK_CENTER[1]] : FALLBACK_CENTER}
+            zoom={12}
+            style={{ height: "75vh" }}
+          >
             <TileLayer
               attribution="&copy; OpenStreetMap contributors"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -280,13 +429,14 @@ export default function BinDashboard() {
             {bins.map((b) => (
               <Marker
                 key={b.id}
-                position={[b.latitude || 6.9271, b.longitude || 79.8612]}
+                position={[b.latitude || FALLBACK_CENTER[0], b.longitude || FALLBACK_CENTER[1]]}
                 icon={getMarkerIcon(b.binType)}
               >
                 <Popup>
-                  <strong>{b.binType} Bin</strong>
+                  <strong className="capitalize">{b.binType} Bin</strong>
                   <br />ID: {b.binId}
                   <br />Resident: {b.residentName}
+                  <br />Location: {b.location || "—"}
                   <br />Fill: {(b.fillLevel || 0).toFixed(0)}%
                 </Popup>
               </Marker>
@@ -306,7 +456,7 @@ export default function BinDashboard() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by ID, name, or location..."
+                  placeholder="Search by ID, name, address, or location..."
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
@@ -321,6 +471,8 @@ export default function BinDashboard() {
                   <option value="recyclable">Recyclable</option>
                   <option value="organic">Organic</option>
                   <option value="plastic">Plastic</option>
+                  <option value="electronic">Electronic</option>
+                  <option value="hazardous">Hazardous</option>
                 </select>
                 <select
                   value={sortBy}
@@ -330,6 +482,8 @@ export default function BinDashboard() {
                   <option value="newest">Newest</option>
                   <option value="oldest">Oldest</option>
                   <option value="fill-level">Fill Level</option>
+                  <option value="name-asc">Name A–Z</option>
+                  <option value="name-desc">Name Z–A</option>
                 </select>
               </div>
             </div>
@@ -361,7 +515,9 @@ export default function BinDashboard() {
                         <h3 className="font-bold text-gray-900 capitalize">
                           {b.binType} Bin
                         </h3>
-                        <p className="text-sm text-gray-600 font-mono">{b.binId}</p>
+                        <p className="text-sm text-gray-600 font-mono">
+                          {b.binId}
+                        </p>
                       </div>
                       <span
                         className={`text-xs font-semibold px-2 py-1 rounded-full ${
@@ -392,7 +548,7 @@ export default function BinDashboard() {
                         <p className="text-sm text-gray-600">
                           {b.ownerName || "—"} • {b.residentType}
                         </p>
-                        <div className="flex gap-2 text-sm text-gray-600 mt-1">
+                        <div className="flex gap-2 text-sm text-gray-600 mt-1 flex-wrap">
                           {b.phone && (
                             <span className="flex items-center gap-1">
                               <Phone size={12} /> {b.phone}
@@ -406,9 +562,13 @@ export default function BinDashboard() {
                         </div>
                       </div>
                     </div>
-                    {b.location && (
+                    {(b.address || b.location) && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin size={14} /> {b.location}
+                        <MapPin size={14} />
+                        <span className="truncate">
+                          {b.address || b.location}
+                          {b.address && b.location ? ` • ${b.location}` : ""}
+                        </span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -438,7 +598,7 @@ export default function BinDashboard() {
                       </button>
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* Actions */}
                     <div className="flex gap-2">
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -467,65 +627,57 @@ export default function BinDashboard() {
         </>
       )}
 
-      {/* ✏️ Edit Modal */}
+      {/* ---------------- Edit Modal ---------------- */}
       <AnimatePresence>
         {editBin && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
             onClick={() => setEditBin(null)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl"
+              className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Edit Bin Details
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold text-gray-900">
+                  Edit Bin Details
+                </h3>
+                <span className="text-xs text-gray-500 font-mono">
+                  ID: {editBin.binId}
+                </span>
+              </div>
 
-              <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4 mt-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Resident Name *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Resident Name *</label>
                   <input
                     type="text"
                     value={editBin.residentName || ""}
-                    onChange={(e) =>
-                      setEditBin({ ...editBin, residentName: e.target.value })
-                    }
+                    onChange={(e) => setEditBin({ ...editBin, residentName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Owner / Organization
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Owner / Organization</label>
                   <input
                     type="text"
                     value={editBin.ownerName || ""}
-                    onChange={(e) =>
-                      setEditBin({ ...editBin, ownerName: e.target.value })
-                    }
+                    onChange={(e) => setEditBin({ ...editBin, ownerName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Resident Type
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Resident Type</label>
                   <select
                     value={editBin.residentType || "House"}
-                    onChange={(e) =>
-                      setEditBin({ ...editBin, residentType: e.target.value })
-                    }
+                    onChange={(e) => setEditBin({ ...editBin, residentType: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   >
                     <option>House</option>
@@ -536,73 +688,102 @@ export default function BinDashboard() {
                     <option>Other</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                   <input
                     type="tel"
                     value={editBin.phone || ""}
-                    onChange={(e) =>
-                      setEditBin({ ...editBin, phone: e.target.value })
-                    }
+                    onChange={(e) => setEditBin({ ...editBin, phone: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="+94 71 123 4567"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Location Description
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={editBin.email || ""}
+                    onChange={(e) => setEditBin({ ...editBin, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="your@email.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Collection Frequency</label>
+                  <select
+                    value={editBin.collectionFrequency || "weekly"}
+                    onChange={(e) => setEditBin({ ...editBin, collectionFrequency: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Waste Type</label>
+                  <select
+                    value={editBin.binType || "general"}
+                    onChange={(e) => setEditBin({ ...editBin, binType: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    <option value="general">General</option>
+                    <option value="recyclable">Recyclable</option>
+                    <option value="organic">Organic</option>
+                    <option value="plastic">Plastic</option>
+                    <option value="electronic">Electronic</option>
+                    <option value="hazardous">Hazardous</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bin Size</label>
+                  <select
+                    value={editBin.binSize || "medium"}
+                    onChange={(e) => setEditBin({ ...editBin, binSize: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    <option value="small">Small (50L)</option>
+                    <option value="medium">Medium (120L)</option>
+                    <option value="large">Large (240L)</option>
+                    <option value="commercial">Commercial (1000L+)</option>
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                   <input
                     type="text"
-                    value={editBin.location || ""}
-                    onChange={(e) =>
-                      setEditBin({ ...editBin, location: e.target.value })
-                    }
+                    value={editBin.address || ""}
+                    onChange={(e) => setEditBin({ ...editBin, address: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="Street address, City, Postal Code"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Bin Size
-                    </label>
-                    <select
-                      value={editBin.binSize || "medium"}
-                      onChange={(e) =>
-                        setEditBin({ ...editBin, binSize: e.target.value })
-                      }
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bin Location (human-readable)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editBin.location || ""}
+                      onChange={(e) => setEditBin({ ...editBin, location: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="e.g., Near front gate / Block A parking"
+                    />
+                    <button
+                      type="button"
+                      onClick={openLocationPicker}
+                      className="whitespace-nowrap flex items-center gap-2 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+                      title="Edit precise location on map"
                     >
-                      <option value="small">Small (50L)</option>
-                      <option value="medium">Medium (120L)</option>
-                      <option value="large">Large (240L)</option>
-                      <option value="commercial">Commercial (1000L+)</option>
-                    </select>
+                      <Crosshair size={16} />
+                      Edit location
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Collection Frequency
-                    </label>
-                    <select
-                      value={editBin.collectionFrequency || "weekly"}
-                      onChange={(e) =>
-                        setEditBin({
-                          ...editBin,
-                          collectionFrequency: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    >
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="biweekly">Bi-weekly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                  </div>
+                  {/* Coordinates intentionally hidden from UI */}
                 </div>
               </div>
 
@@ -625,6 +806,82 @@ export default function BinDashboard() {
         )}
       </AnimatePresence>
 
+      {/* ---------------- Location Picker Modal ---------------- */}
+      <AnimatePresence>
+        {locationPickerOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3"
+            onClick={cancelLocationPick}
+          >
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 30, opacity: 0 }}
+              className="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center gap-2">
+                  <MapIcon size={18} />
+                  <h4 className="font-semibold">Set Bin Location</h4>
+                </div>
+                <div className="text-xs text-gray-500">
+                  Click on the map to move the pin
+                </div>
+              </div>
+
+              <div className="p-4">
+                <div className="flex gap-3 mb-3">
+                  <button
+                    type="button"
+                    onClick={useMyLocation}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    <LocateFixed size={16} />
+                    Use My Location
+                  </button>
+                  {typeof draftLocation.lat === "number" && typeof draftLocation.lng === "number" && (
+                    <div className="px-3 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-sm">
+                      Selected: {fmtCoord(draftLocation.lat)}, {fmtCoord(draftLocation.lng)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-xl overflow-hidden border">
+                  <MapPicker
+                    value={draftLocation}
+                    onChange={setDraftLocation}
+                    center={
+                      typeof draftLocation.lat === "number" && typeof draftLocation.lng === "number"
+                        ? [draftLocation.lat, draftLocation.lng]
+                        : FALLBACK_CENTER
+                    }
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    onClick={cancelLocationPick}
+                    className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmLocationPick}
+                    className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
+                    Confirm location
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Footer */}
       <motion.footer
         initial={{ opacity: 0 }}
@@ -632,14 +889,37 @@ export default function BinDashboard() {
         transition={{ delay: 0.5 }}
         className="text-center text-gray-500 text-sm mt-12 pt-8 border-t border-gray-200"
       >
-        <p>
-          © 2025 Smart Waste Management System | Building Sustainable
-          Communities ♻️
-        </p>
-        <p className="mt-1 text-xs">
-          Last updated: {new Date().toLocaleDateString()}
-        </p>
+        <p>© {new Date().getFullYear()} Smart Waste Management System | Building Sustainable Communities ♻️</p>
+        <p className="mt-1 text-xs">Last updated: {new Date().toLocaleDateString()}</p>
       </motion.footer>
     </div>
+  );
+}
+
+/** ---------------- Map Picker Component ---------------- */
+function MapPicker({ value, onChange, center }) {
+  const current = Array.isArray(center) ? center : FALLBACK_CENTER;
+  const icon = getMarkerIcon("general");
+
+  function ClickHandler() {
+    useMapEvents({
+      click(e) {
+        onChange({ lat: e.latlng.lat, lng: e.latlng.lng });
+      },
+    });
+    return null;
+  }
+
+  return (
+    <MapContainer center={current} zoom={13} style={{ height: 420, width: "100%" }}>
+      <TileLayer
+        attribution="&copy; OpenStreetMap contributors"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <ClickHandler />
+      {typeof value.lat === "number" && typeof value.lng === "number" && (
+        <Marker position={[value.lat, value.lng]} icon={icon} />
+      )}
+    </MapContainer>
   );
 }
