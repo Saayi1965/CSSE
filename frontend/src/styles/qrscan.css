@@ -1,0 +1,164 @@
+.content {
+  padding: 28px;
+  background-color: var(--light);
+  min-height: 100vh;
+}
+
+.content h1 {
+  font-size: 1.8rem;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+}
+
+/* ===== Scan Area ===== */
+.scan-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+  margin-bottom: 24px;
+}
+
+.scan-box {
+  background: #f3f4f6;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  width: 320px;
+  height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.scan-box:hover {
+  border-color: var(--primary);
+  background-color: #f9fafb;
+}
+
+.camera-icon {
+  font-size: 2.8rem;
+  margin-bottom: 8px;
+}
+
+.scan-text {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 16px 0;
+  position: relative;
+}
+
+.divider span {
+  background: white;
+  padding: 0 10px;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.divider::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: #d1d5db;
+  z-index: 0;
+}
+
+/* ===== Manual Entry ===== */
+.manual-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 350px;
+  justify-content: center;
+}
+
+.manual-entry input {
+  padding: 10px;
+  width: 70%;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.manual-entry input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}
+
+.primary {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.primary:hover {
+  background-color: var(--accent);
+}
+
+/* ===== Recent Scans ===== */
+.recent-scans h2 {
+  color: var(--primary);
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.recent-scans ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recent-scans li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+  transition: 0.2s;
+}
+
+.recent-scans li:hover {
+  background-color: #f9fafb;
+}
+
+.bin-id {
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.time {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.empty-text {
+  color: #9ca3af;
+  font-style: italic;
+  padding: 10px;
+}

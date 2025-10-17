@@ -1,0 +1,160 @@
+/* ======== Layout & Header ======== */
+.content {
+  padding: 28px;
+  background-color: var(--light);
+  min-height: 100vh;
+}
+
+.viewroutes-header {
+  margin-bottom: 24px;
+}
+
+.viewroutes-header h1 {
+  font-size: 1.9rem;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+/* ======== Two-Column Layout ======== */
+.map-bin-container {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr; /* map left, table right */
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .map-bin-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ======== Cards ======== */
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  transition: 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+/* ======== Map Card ======== */
+.map-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ======== Bin Details Card ======== */
+.bin-card {
+  overflow-y: auto;
+  max-height: 550px;
+}
+
+.section-title {
+  color: var(--primary);
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+/* ======== Table ======== */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  background: var(--primary);
+  color: white;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 0.9rem;
+}
+
+tr:hover {
+  background-color: #f9fafb;
+}
+
+/* ======== Status Styles ======== */
+.status {
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  text-transform: capitalize;
+  font-size: 0.85rem;
+}
+
+.status.full {
+  background-color: #ef4444;
+}
+
+.status.collected {
+  background-color: #10b981;
+}
+
+.status.maintenance {
+  background-color: #f59e0b;
+}
+
+/* ======== Legend ======== */
+.map-legend {
+  margin-top: 24px;
+  width: fit-content;
+}
+
+.map-legend h3 {
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+
+.map-legend ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.map-legend li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.dot {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.dot.full {
+  background-color: #ef4444;
+}
+
+.dot.collected {
+  background-color: #10b981;
+}
+
+.dot.maintenance {
+  background-color: #f59e0b;
+}

@@ -19,9 +19,9 @@ export default function Sidebar({ user, onLogout }) {
   ];
 
   const collectorMenu = [
-    { id: 'collector-dashboard', label: 'Collector Dashboard', icon: '🗺️' },
+    { id: 'collectordashboard', label: 'CollectorDashboard', icon: '🗺️' },
     { id: 'routes', label: 'Routes', icon: '🛣️' },
-    { id: 'vehicles', label: 'Vehicles', icon: '🚛' },
+    { id: 'QRScan', label: 'QRScan', icon: '🚛' },
     { id: 'pickup-history', label: 'Pickup History', icon: '🧾' }
   ];
 

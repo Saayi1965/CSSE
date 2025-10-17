@@ -1,0 +1,35 @@
+.map-legend {
+  margin-top: 20px;
+  width: fit-content;
+}
+
+.map-legend ul {
+  list-style: none;
+  padding: 0;
+}
+
+.map-legend li {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.dot {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.dot.full {
+  background-color: red;
+}
+
+.dot.collected {
+  background-color: green;
+}
+
+.dot.maintenance {
+  background-color: orange;
+}
