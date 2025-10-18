@@ -35,7 +35,7 @@ const submit = async (e) => {
     
     // Navigate based on role
     if (role === 'ROLE_ADMIN') {
-      navigate('/admin/dashboard');
+      navigate('/admin');
     } else if (role === 'ROLE_COLLECTOR') {
       navigate('/collector/dashboard');
     } else {

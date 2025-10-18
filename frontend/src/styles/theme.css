@@ -1,0 +1,24 @@
+/* Minimal theme.css to satisfy imports and provide base layout + RecyLink color tokens */
+:root{
+  --recy-green: #34A853;
+  --recy-blue: #4285F4;
+  --recy-yellow: #FBBC05;
+  --recy-red: #EA4335;
+  --recy-purple: #673AB7;
+  --bg: #ffffff;
+  --muted: #6c757d;
+}
+
+body{
+  background: var(--bg);
+  color: #222;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Sidebar helpers */
+.sidebar-brand{display:flex;align-items:center;gap:.5rem}
+
+/* small responsive tweaks */
+@media (max-width: 768px){
+  .h-screen{height:auto}
+}

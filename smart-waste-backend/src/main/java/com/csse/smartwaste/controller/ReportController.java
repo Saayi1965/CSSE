@@ -2,6 +2,7 @@
 package com.csse.smartwaste.controller;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -44,5 +45,26 @@ public class ReportController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
                 .body(csv);
+    }
+
+    // New: list reports with optional filters and also return summary for charts
+    @GetMapping("")
+    public ResponseEntity<?> list(
+            @RequestParam Optional<String> from,
+            @RequestParam Optional<String> to,
+            @RequestParam Optional<String> zone,
+            @RequestParam Optional<String> user,
+            @RequestParam Optional<String> vehicle
+    ) {
+        LocalDate f = from.map(LocalDate::parse).orElse(LocalDate.now().minusDays(30));
+        LocalDate t = to.map(LocalDate::parse).orElse(LocalDate.now());
+
+        var reports = service.listReports(f, t, zone, user, vehicle);
+        var summary = service.summaryForChart(f, t);
+
+        return ResponseEntity.ok(new LinkedHashMap<String, Object>() {{
+            put("reports", reports);
+            put("summary", summary);
+        }});
     }
 }

@@ -1,9 +1,11 @@
 /* Dashboard styles for frontend project */
 :root{
-  --bg-1: #f5f9ff;
-  --bg-2: #ffffff;
-  --accent: #4A90E2;
-  --muted: #6b7280;
+  --base-bg: #F7FAFC;
+  --secondary: #673AB7;
+  --accent: #34A853;
+  --text-dark: #1E293B;
+  --text-muted: #64748B;
+  --border: #E2E8F0;
 }
 html,body,#root{height:100%;}
 body{
@@ -57,7 +59,12 @@ body {
   color: #1E293B;
 }
 
-.card, .rounded-3 {
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+} 
+.rounded-3 {
   border-radius: 12px !important;
 }
 

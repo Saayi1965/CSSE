@@ -1,83 +1,74 @@
 import React, { useEffect, useState } from 'react';
+import KPICard from '../components/KPICard';
 import api from '../api/api';
+import { LineChart, Line, PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function AdminDashboard(){
-  const [users, setUsers] = useState([]);
+const COLORS = ['#34A853', '#4285F4', '#F39C12', '#10B981'];
+
+export default function AdminDashboard() {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    let mounted = true;
-    api.get('/users')
-      .then(res => {
-        if (!mounted) return;
-        setUsers(res.data || []);
-      })
-      .catch(err => {
-        console.error('Failed to load users', err);
-        if (!mounted) return;
-        setError('Failed to load users');
-      })
-      .finally(() => mounted && setLoading(false));
-
-    return () => { mounted = false; };
+    api.get('/admin/overview').then(res => {
+      const d = res.data || {};
+      // map backend shape to UI shape
+      const totalWaste = d.totalKg ? `${Math.round(d.totalKg)} kg` : '0 kg';
+      const recyclingRate = d.recyclingRate || 0;
+      const activeZones = d.activeZones || 0;
+      const efficiency = d.efficiency || 'N/A';
+      const monthly = (d.monthlyTrend || []).map(m => ({ month: m.month, collected: m.weightKg, recycled: 0 }));
+      const wasteTypes = Object.entries(d.byType || {}).map(([name, value]) => ({ name, value }));
+      setData({ totalWaste, recyclingRate, activeZones, efficiency, monthly, wasteTypes, missedAlerts: d.missedPickups });
+      setLoading(false);
+    }).catch(err => { console.error(err); setLoading(false); });
   }, []);
 
-  return (
-    <div>
-      <h2>Admin Dashboard</h2>
-      <p>Overview of system status and user management.</p>
+  if (loading) return <div className="p-5 text-center">Loading...</div>;
 
-      <div className="row mb-4">
-        <div className="col-md-4">
-          <div className="card p-3 mb-3">
-            <h6>Active Bins</h6>
-            <div className="fs-4">128</div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card p-3 mb-3">
-            <h6>Pending Reports</h6>
-            <div className="fs-4">24</div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card p-3 mb-3">
-            <h6>Collectors Online</h6>
-            <div className="fs-4">12</div>
-          </div>
-        </div>
+  return (
+    <div className="p-4">
+      <div className={`alert ${data?.missedAlerts > 0 ? 'alert-danger' : 'alert-success'} d-flex justify-content-between align-items-center`}>
+        <span>{data?.missedAlerts > 0 ? `⚠ ${data.missedAlerts} missed pickups` : 'All pickups on schedule'}</span>
+        <button className="btn btn-sm btn-success" onClick={() => {
+          // download CSV
+          window.open('/api/admin/report.csv', '_blank');
+        }}>Generate Report</button>
       </div>
 
-      <div>
-        <h4>Users</h4>
-        {loading && <div>Loading users…</div>}
-        {error && <div className="alert alert-danger">{error}</div>}
-        {!loading && !error && (
-          <div className="table-responsive">
-            <table className="table table-striped">
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Role</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id || u.username}>
-                    <td>{u.username}</td>
-                    <td>{u.role?.replace('ROLE_','') || ''}</td>
-                    <td>
-                      <button className="btn btn-sm btn-outline-primary me-2">Edit</button>
-                      <button className="btn btn-sm btn-outline-danger">Disable</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="row g-3 mb-4">
+        <div className="col-md-3"><KPICard title="Total Waste Collected" value={data.totalWaste} icon="🗑️" color="#4285F4" /></div>
+        <div className="col-md-3"><KPICard title="Recycling Rate" value={`${data.recyclingRate}%`} icon="♻️" color="#34A853" /></div>
+        <div className="col-md-3"><KPICard title="Active Zones" value={data.activeZones} icon="📍" color="#673AB7" /></div>
+        <div className="col-md-3"><KPICard title="Efficiency" value={data.efficiency} icon="⚡" color="#F39C12" /></div>
+      </div>
+
+      <div className="row g-3">
+        <div className="col-md-7">
+          <div className="card p-3">
+            <h6 className="fw-bold mb-3">Monthly Waste Trend</h6>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={data.monthly}>
+                <Tooltip />
+                <Line type="monotone" dataKey="collected" stroke="#4285F4" strokeWidth={2} name="Collected" />
+                <Line type="monotone" dataKey="recycled" stroke="#34A853" strokeWidth={2} name="Recycled" />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-        )}
+        </div>
+        <div className="col-md-5">
+          <div className="card p-3 text-center">
+            <h6 className="fw-bold mb-3">Waste Type Distribution</h6>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={data.wasteTypes} dataKey="value" nameKey="name" outerRadius={80} label>
+                  {data.wasteTypes.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </div>
   );

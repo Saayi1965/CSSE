@@ -3,9 +3,11 @@ package com.csse.smartwaste.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -58,6 +60,60 @@ public class ReportService {
             put("weightByType", byType);
             put("countByType", count);
         }};
+    }
+
+    /**
+     * Return a list of report rows matching optional filters. The front-end expects
+     * objects with keys: date, zone, user, vehicle, collected, recycled, status
+     */
+    public List<Map<String, Object>> listReports(LocalDate from, LocalDate to, Optional<String> zoneOpt, Optional<String> userOpt, Optional<String> vehicleOpt) {
+        List<Collection> list = repo.findByDateBetween(from, to);
+
+        return list.stream()
+                .filter(c -> {
+                    if (zoneOpt.isPresent() && !zoneOpt.get().isBlank() && !zoneOpt.get().equalsIgnoreCase("All")) {
+                        String zone = zoneOpt.get();
+                        String region = c.getRegion() == null ? "" : c.getRegion();
+                        if (!region.toLowerCase().contains(zone.toLowerCase())) return false;
+                    }
+                    return true;
+                })
+                .map(c -> {
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("date", c.getDate() != null ? c.getDate().toString() : "");
+                    row.put("zone", c.getRegion());
+                    row.put("user", userOpt.orElse(""));
+                    row.put("vehicle", vehicleOpt.orElse(""));
+                    row.put("collected", c.getWeightKg());
+                    boolean recyclable = c.getWasteType() != null && c.getWasteType().toLowerCase().matches(".*(plastic|paper|metal|glass|recycl).*");
+                    double recycled = c.getWeightKg() * (recyclable ? 0.7 : 0.05);
+                    // round to 2 decimals
+                    double recycledRounded = Math.round(recycled * 100.0) / 100.0;
+                    row.put("recycled", recycledRounded);
+                    row.put("status", "Completed");
+                    return row;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Return a small array of metric objects suitable for the frontend chart component
+     */
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> summaryForChart(LocalDate from, LocalDate to) {
+        Map<String, Object> s = summary(from, to);
+        double total = 0.0;
+        Object totObj = s.get("totalWeightKg");
+        if (totObj instanceof Number) total = ((Number) totObj).doubleValue();
+        Map<String, Double> byType = (Map<String, Double>) s.get("weightByType");
+        int types = byType != null ? byType.size() : 0;
+        int collections = repo.findByDateBetween(from, to).size();
+
+        List<Map<String, Object>> out = new ArrayList<>();
+        out.add(Map.of("metric", "Total Weight (kg)", "value", total));
+        out.add(Map.of("metric", "Waste Types", "value", (double) types));
+        out.add(Map.of("metric", "Collections", "value", (double) collections));
+        return out;
     }
 
     /** ✅ NEW: matches controller usage; returns CSV bytes */
