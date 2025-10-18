@@ -3,7 +3,7 @@ import api from "../api/api";
 
 export default function UserModal({ user, onClose, onReload }) {
   const [form, setForm] = useState(
-    user || { username: "", role: "ROLE_RESIDENTIAL", status: "Active", route: "" }
+    user || { username: "", role: "ROLE_RESIDENTIAL", status: "Active", route: "", email: "", lastLogin: "" }
   );
   const [saving, setSaving] = useState(false);
 
@@ -12,10 +12,18 @@ export default function UserModal({ user, onClose, onReload }) {
   const saveUser = async () => {
     setSaving(true);
     try {
-      if (user) {
-        await api.put(`/users/${user.id}`, form);
+      const payload = {
+        username: form.username,
+        role: form.role,
+        status: form.status,
+        route: form.route,
+        email: form.email,
+        lastLogin: form.lastLogin
+      };
+      if (user && user.id) {
+        await api.put(`/users/${user.id}`, payload);
       } else {
-        await api.post("/users", form);
+        await api.post("/users", payload);
       }
       onReload();
       onClose();
@@ -61,6 +69,16 @@ export default function UserModal({ user, onClose, onReload }) {
             value={form.route}
             onChange={(e) => handleChange("route", e.target.value)}
           />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label small fw-semibold text-muted">Email</label>
+          <input className="form-control" value={form.email} onChange={(e)=>handleChange('email', e.target.value)} />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label small fw-semibold text-muted">Last Login</label>
+          <input className="form-control" value={form.lastLogin} onChange={(e)=>handleChange('lastLogin', e.target.value)} />
         </div>
 
         <div className="mb-3">

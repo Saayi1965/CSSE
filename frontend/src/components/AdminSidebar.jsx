@@ -38,43 +38,43 @@ export default function AdminSidebar({ onLogout }) {
     { 
       id: 'dashboard', 
       label: 'Dashboard', 
-      icon: <Home size={20} />, 
+      icon: <Home size={35} />, 
       path: '/admin',
       badge: null
     },
     { 
+      id: 'analytics', 
+      label: 'Analytics', 
+      icon: <BarChart2 size={35} />, 
+      path: '/admin/analytics',
+      badge: 'New'
+    },
+    { 
+      id: 'waste-types', 
+      label: 'Waste Management', 
+      icon: <Recycle size={35} />, 
+      path: '/admin/waste-types',
+      badge: null
+    },
+    { 
       id: 'bins', 
-      label: 'Smart Bins', 
-      icon: <MapPin size={20} />, 
+      label: 'Monitoring Bins', 
+      icon: <MapPin size={35} />, 
       path: '/admin/bins',
       badge: '3'
     },
     { 
       id: 'reports', 
-      label: 'Reports', 
-      icon: <FileText size={20} />, 
+      label: 'Generate Reports', 
+      icon: <FileText size={35} />, 
       path: '/admin/reports',
       badge: '12'
     },
     { 
       id: 'users', 
       label: 'User Management', 
-      icon: <Users size={20} />, 
+      icon: <Users size={35} />, 
       path: '/admin/users',
-      badge: null
-    },
-    { 
-      id: 'analytics', 
-      label: 'Analytics', 
-      icon: <BarChart2 size={20} />, 
-      path: '/admin/analytics',
-      badge: 'New'
-    },
-    { 
-      id: 'waste-types', 
-      label: 'Waste Types', 
-      icon: <Recycle size={20} />, 
-      path: '/admin/waste-types',
       badge: null
     },
   ];
@@ -333,7 +333,7 @@ export default function AdminSidebar({ onLogout }) {
       </div>
 
       {/* Global Styles */}
-      <style jsx>{`
+  <style>{`
         .collapsed-sidebar .tooltip {
           opacity: 1 !important;
           margin-left: 8px;

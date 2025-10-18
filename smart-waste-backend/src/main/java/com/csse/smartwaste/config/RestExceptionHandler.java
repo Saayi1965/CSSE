@@ -21,7 +21,7 @@ public class RestExceptionHandler {
                 "message", "MongoDB is not reachable. Please start MongoDB or update configuration.",
                 "detail", msg
         );
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).header("Content-Type", "application/json").body(body);
     }
 
     @ExceptionHandler(Exception.class)
@@ -30,6 +30,6 @@ public class RestExceptionHandler {
                 "error", "internal_error",
                 "message", ex.getMessage() == null ? "Unexpected server error" : ex.getMessage()
         );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).header("Content-Type", "application/json").body(body);
     }
 }

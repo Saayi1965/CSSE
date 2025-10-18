@@ -47,6 +47,10 @@ public class User {
     
     private String password;
     private Role role;
+    private String status;
+    private String route;
+    private String email;
+    private String lastLogin;
     
     // Constructors
     public User() {}
@@ -55,6 +59,16 @@ public class User {
         this.username = username;
         this.password = password;
         this.role = role;
+    }
+
+    public User(String username, String password, Role role, String status, String route, String email, String lastLogin) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.status = status;
+        this.route = route;
+        this.email = email;
+        this.lastLogin = lastLogin;
     }
     
     // Getters and Setters
@@ -70,8 +84,20 @@ public class User {
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
     
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public String getRoute() { return route; }
+    public void setRoute(String route) { this.route = route; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getLastLogin() { return lastLogin; }
+    public void setLastLogin(String lastLogin) { this.lastLogin = lastLogin; }
+    
     @Override
     public String toString() {
-        return "User{id='" + id + "', username='" + username + "', role=" + role + '}';
+        return "User{id='" + id + "', username='" + username + "', role=" + role + ", status=" + status + '}';
     }
 }

@@ -389,7 +389,7 @@ export default function Analytics() {
         </div>
       </div>
 
-      <style jsx>{`
+  <style>{`
         .spin {
           animation: spin 1s linear infinite;
         }

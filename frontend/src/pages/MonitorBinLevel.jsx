@@ -428,7 +428,7 @@ export default function MonitorBinLevel() {
         </>
       )}
 
-      <style jsx>{`
+  <style>{`
         .hover-lift {
           transition: transform 0.2s ease, box-shadow 0.2s ease;
         }

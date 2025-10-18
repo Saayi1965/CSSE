@@ -1,8 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
-export default function UserFilter({ filter, onFilter }) {
+export default function UserFilter({ filter, onApply }) {
+  const [local, setLocal] = useState({ role: 'All', status: 'All', search: '' });
+
+  useEffect(() => {
+    if (filter) setLocal(filter);
+  }, [filter]);
+
   const handleChange = (key, value) => {
-    onFilter({ ...filter, [key]: value });
+    setLocal(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -14,7 +20,7 @@ export default function UserFilter({ filter, onFilter }) {
           </label>
           <select
             className="form-select"
-            value={filter.role}
+            value={local.role}
             onChange={(e) => handleChange("role", e.target.value)}
           >
             <option>All</option>
@@ -30,7 +36,7 @@ export default function UserFilter({ filter, onFilter }) {
           </label>
           <select
             className="form-select"
-            value={filter.status}
+            value={local.status}
             onChange={(e) => handleChange("status", e.target.value)}
           >
             <option>All</option>
@@ -42,7 +48,7 @@ export default function UserFilter({ filter, onFilter }) {
         <div className="col-md-4 d-flex align-items-end">
           <button
             className="btn btn-outline-success w-100"
-            onClick={() => onFilter(filter)}
+            onClick={() => onApply && onApply(local)}
           >
             🔍 Apply Filters
           </button>

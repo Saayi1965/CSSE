@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function ReportActions({ reports }) {
+export default function ReportActions({ reports, onExportPdf, exportDisabled }) {
   const exportCSV = () => {
     const headers = ["Date", "Zone", "Collector", "Vehicle", "Collected", "Recycled", "Status"];
     const rows = reports.map((r) => [r.date, r.zone, r.user, r.vehicle, r.collected, r.recycled, r.status]);
@@ -18,8 +18,8 @@ export default function ReportActions({ reports }) {
         <button className="btn btn-outline-success me-2" onClick={exportCSV}>
           <i className="fas fa-download me-1"></i>Export CSV
         </button>
-        <button className="btn btn-outline-primary me-2">
-          <i className="fas fa-file-pdf me-1"></i>Export PDF
+        <button className="btn btn-outline-primary me-2" onClick={() => onExportPdf && onExportPdf()} disabled={exportDisabled}>
+          <i className="fas fa-file-pdf me-1"></i>{exportDisabled ? 'Generating…' : 'Export PDF'}
         </button>
         <button className="btn btn-outline-secondary">
           <i className="fas fa-envelope me-1"></i>Share via Email

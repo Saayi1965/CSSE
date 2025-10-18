@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api, { testBackendConnection } from '../api/api';
 import '../styles/auth.css';
 import RecyLinkLogo from '../assets/RecyLink_Logo.png';
+import { useToast } from '../components/Toast';
 
 export default function Signup({ onAuth }) {
   const [username, setUsername] = useState('');
@@ -68,11 +69,13 @@ export default function Signup({ onAuth }) {
   const handleTestConnection = async () => {
     const result = await testBackendConnection();
     if (result.success) {
-      alert('✅ Backend connection successful!');
+      toast.show('✅ Backend connection successful!', { type: 'success' });
     } else {
-      alert('❌ Backend connection failed: ' + result.error);
+      toast.show('❌ Backend connection failed: ' + result.error, { type: 'error' });
     }
   }
+
+  const toast = useToast();
 
   return (
     <div className="auth-container">

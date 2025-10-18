@@ -1,6 +1,9 @@
 import React from "react";
+import api from "../api/api";
+import { useToast } from './Toast';
 
 export default function UserTable({ users, onEdit, onReload }) {
+  const toast = useToast();
   return (
     <div className="card shadow-sm p-3">
       <h6 className="fw-semibold mb-3">Registered Users</h6>
@@ -45,9 +48,16 @@ export default function UserTable({ users, onEdit, onReload }) {
                     </button>
                     <button
                       className="btn btn-sm btn-outline-danger"
-                      onClick={() =>
-                        alert("Remove user API integration pending.")
-                      }
+                      onClick={async () => {
+                        if (!confirm(`Delete user ${u.username}?`)) return;
+                        try {
+                          await api.delete(`/users/${u.id}`);
+                          if (onReload) onReload();
+                        } catch (e) {
+                          console.error('Delete failed', e);
+                          try { toast && toast.show && toast.show('Delete failed: ' + (e.response?.data?.error || e.message), { type: 'error' }); } catch (ex) {}
+                        }
+                      }}
                     >
                       🗑️ Delete
                     </button>

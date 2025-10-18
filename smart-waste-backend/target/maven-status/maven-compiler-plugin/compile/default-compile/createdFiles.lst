@@ -11,7 +11,6 @@ com\csse\smartwaste\security\JwtUtil.class
 com\csse\smartwaste\controller\DebugController.class
 com\csse\smartwaste\model\Collection.class
 com\csse\smartwaste\controller\AuthController.class
-com\csse\smartwaste\service\ReportService.class
 com\csse\smartwaste\controller\UserController.class
 com\csse\smartwaste\service\impl\AuthServiceImpl.class
 com\csse\smartwaste\controller\ReportController.class
