@@ -12,7 +12,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url("https://images.unsplash.com/photo-1538137524007-21e48fa42f3f?auto=format&fit=crop&w=1400&q=80");
+  /* Use local placeholder as the primary background to avoid external TLS/SSL issues; keep remote URL as fallback reference */
+  background-image: url('/images/placeholder.svg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

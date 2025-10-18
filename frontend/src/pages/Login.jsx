@@ -1,83 +1,96 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/api';
-import '../styles/auth.css';
-import RecyLinkLogo from '../assets/RecyLink_Logo.png';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/api";
+import "../styles/auth.css";
+import RecyLinkLogo from "../assets/RecyLink_Logo.png";
 
 export default function Login({ onAuth }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-const submit = async (e) => {
-  e.preventDefault();
-  setError(null);
-  
-  try {
-    const payload = { 
-      username: username.trim(), 
-      password: password.trim() 
-    };
-    
-    console.log('Attempting login with:', payload);
-    
-    const res = await api.post('/auth/login', payload);
-    const { token, role } = res.data;
-    
-    console.log('Login successful:', res.data);
-    
-    localStorage.setItem('token', token);
-    localStorage.setItem('role', role);
-    localStorage.setItem('username', username);
-    
-    if (onAuth) onAuth({ username, role });
-    
-    // Navigate based on role
-    if (role === 'ROLE_ADMIN') {
-      navigate('/admin/dashboard');
-    } else if (role === 'ROLE_COLLECTOR') {
-      navigate('/collector/dashboard');
-    } else {
-      navigate('/user/dashboard');
+  const submit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      const payload = {
+        username: username.trim(),
+        password: password.trim(),
+      };
+
+      console.log("Attempting login with:", payload);
+
+      const res = await api.post("/auth/login", payload);
+      const { token, role } = res.data;
+
+      console.log("Login successful:", res.data);
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("role", role);
+      localStorage.setItem("username", username);
+
+      if (onAuth) onAuth({ username, role });
+
+      // Navigate based on role
+      if (role === "ROLE_ADMIN") {
+        navigate("/admin/dashboard");
+      } else if (role === "ROLE_COLLECTOR") {
+        navigate("/collector/dashboard");
+      } else {
+        navigate("/user/dashboard");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+
+      if (err.response) {
+        // Server responded with error status
+        console.error("Response data:", err.response.data);
+        console.error("Response status:", err.response.status);
+        setError(err.response.data?.error || `Error: ${err.response.status}`);
+      } else if (err.request) {
+        // Request made but no response received
+        console.error("No response received:", err.request);
+        setError("Cannot connect to server. Please try again.");
+      } else {
+        // Other errors
+        console.error("Error:", err.message);
+        setError("An unexpected error occurred");
+      }
     }
-  } catch (err) {
-    console.error('Login error:', err);
-    
-    if (err.response) {
-      // Server responded with error status
-      console.error('Response data:', err.response.data);
-      console.error('Response status:', err.response.status);
-      setError(err.response.data?.error || `Error: ${err.response.status}`);
-    } else if (err.request) {
-      // Request made but no response received
-      console.error('No response received:', err.request);
-      setError('Cannot connect to server. Please try again.');
-    } else {
-      // Other errors
-      console.error('Error:', err.message);
-      setError('An unexpected error occurred');
-    }
-  }
-};
+  };
 
   return (
     <div className="auth-container">
       <div className="auth-overlay"></div>
       <div className="auth-modal">
         <div className="auth-left">
-          <img src={RecyLinkLogo} alt="RecyLink" style={{ width: 70, marginBottom: 20 }} />
+          <img
+            src={RecyLinkLogo}
+            alt="RecyLink"
+            style={{ width: 70, marginBottom: 20 }}
+          />
           <h2 className="mb-3">Welcome back 👋</h2>
-          <p className="text-muted mb-4">Login to access your RecyLink dashboard.</p>
+          <p className="text-muted mb-4">
+            Login to access your RecyLink dashboard.
+          </p>
           {error && <div className="alert alert-danger">{error}</div>}
           <form onSubmit={submit}>
             <div className="input-block">
               <label className="input-label">Username</label>
-              <input value={username} onChange={e => setUsername(e.target.value)} />
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
             </div>
             <div className="input-block">
               <label className="input-label">Password</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <button className="btn btn-primary w-100 mt-2">Sign in</button>
           </form>
@@ -86,7 +99,14 @@ const submit = async (e) => {
           </div>
         </div>
         <div className="auth-right">
-          <img src="https://images.unsplash.com/photo-1526403224742-8b5f5b1d12d8?auto=format&fit=crop&w=1000&q=80" alt="login art" />
+          <img
+            src="https://images.unsplash.com/photo-1526403224742-8b5f5b1d12d8?auto=format&fit=crop&w=1000&q=80"
+            alt="login art"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = "/images/placeholder.svg";
+            }}
+          />
         </div>
       </div>
     </div>
