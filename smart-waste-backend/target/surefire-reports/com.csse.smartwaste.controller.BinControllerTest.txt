@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.csse.smartwaste.controller.BinControllerTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.041 s - in com.csse.smartwaste.controller.BinControllerTest

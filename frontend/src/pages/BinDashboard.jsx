@@ -159,18 +159,21 @@ export default function BinDashboard() {
   }, [bins, filter, sortBy, searchQuery]);
 
   // ---------------- Stats ----------------
-  const stats = useMemo(() => ({
-    total: bins.length,
-    active: bins.filter((b) => b.status === "active").length,
-    full: bins.filter((b) => (b.fillLevel || 0) >= 80).length,
-    urgent: bins.filter((b) => (b.fillLevel || 0) >= 90).length,
-    byType: {
-      recyclable: bins.filter((b) => b.binType === "recyclable").length,
-      organic: bins.filter((b) => b.binType === "organic").length,
-      plastic: bins.filter((b) => b.binType === "plastic").length,
-      general: bins.filter((b) => b.binType === "general").length,
-    },
-  }), [bins]);
+  const stats = useMemo(() => {
+    const src = filteredAndSortedBins;
+    return {
+      total: src.length,
+      active: src.filter((b) => String(b.status).toLowerCase() === "active").length,
+      full: src.filter((b) => (b.fillLevel || 0) >= 80).length,
+      urgent: src.filter((b) => (b.fillLevel || 0) >= 90).length,
+      byType: {
+        recyclable: src.filter((b) => b.binType === "recyclable").length,
+        organic: src.filter((b) => b.binType === "organic").length,
+        plastic: src.filter((b) => b.binType === "plastic").length,
+        general: src.filter((b) => b.binType === "general").length,
+      },
+    };
+  }, [filteredAndSortedBins]);
 
   // ---------------- Priority badge ----------------
   const getPriority = (bin) => {

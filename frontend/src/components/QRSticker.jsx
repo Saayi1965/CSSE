@@ -3,24 +3,29 @@ import { useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import { motion } from "framer-motion";
 
-// Small, reusable component to render and download a QR "sticker" for a bin
-// Props:
-// - bin: { binId, binType, ownerName, residentName, location, collectionFrequency, qrData }
-// - label (optional): override the title displayed on the sticker
-// - theme (optional): override colors per bin type
-// - size (optional): base width/height of the sticker canvas (default 400x280)
+/**
+ * Enhanced QR Sticker component (HD version + optional logo)
+ *
+ * Features:
+ * - Higher resolution for print clarity
+ * - Optional organization logo (top-right)
+ * - Improved text alignment and spacing
+ * - Auto-wrap for long text fields
+ */
 export default function QRSticker({
   bin,
   label,
   theme,
   size = { width: 400, height: 280 },
-  showPreview = true, // show a small QR preview inline
-  showQuotes = true,  // show trilingual quote block at bottom
-  customQuotes,       // optional array of { text, icon }
+  showPreview = true,
+  showQuotes = true,
+  customQuotes,
   footerText = "Smart Waste Management System",
+  logoUrl, // ✅ optional organization logo
 }) {
   const qrRef = useRef(null);
 
+  // --- Themes for each bin type
   const themes = {
     general: { color: "#64748B", label: "General Waste ♻️" },
     recyclable: { color: "#059669", label: "Recyclable Waste ♻️" },
@@ -32,21 +37,26 @@ export default function QRSticker({
 
   const t = theme || themes[bin?.binType] || themes.general;
 
-  const download = () => {
+  // ✅ Download sticker in HD
+  const download = async () => {
     if (!bin?.binId) return;
 
-    const stickerCanvas = document.createElement("canvas");
-    const ctx = stickerCanvas.getContext("2d");
     const width = size.width;
     const height = size.height;
-    stickerCanvas.width = width;
-    stickerCanvas.height = height;
+
+    // Create HD canvas (2x scale)
+    const scale = 2;
+    const stickerCanvas = document.createElement("canvas");
+    stickerCanvas.width = width * scale;
+    stickerCanvas.height = height * scale;
+    const ctx = stickerCanvas.getContext("2d");
+    ctx.scale(scale, scale);
 
     // Background
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
 
-    // Header bar
+    // Header
     ctx.fillStyle = t.color;
     ctx.fillRect(0, 0, width, 60);
     ctx.fillStyle = "#ffffff";
@@ -54,49 +64,67 @@ export default function QRSticker({
     ctx.textAlign = "center";
     ctx.fillText(label || t.label, width / 2, 38);
 
-    // Draw QR from the hidden QR canvas
+    // Optional logo
+    if (logoUrl) {
+      const logo = new Image();
+      logo.src = logoUrl;
+      await new Promise((res) => (logo.onload = res));
+      const logoSize = 40;
+      ctx.drawImage(logo, width - logoSize - 15, 10, logoSize, logoSize);
+    }
+
+    // QR code
     const qrCanvas = qrRef.current?.querySelector("canvas");
     const qrSize = 130;
     if (qrCanvas) {
       ctx.drawImage(qrCanvas, 30, 90, qrSize, qrSize);
     }
 
-    // Text fields
+    // Text info
     ctx.fillStyle = "#111827";
     ctx.textAlign = "left";
     ctx.font = "bold 16px Arial";
     ctx.fillText(`Bin ID: ${bin.binId}`, 180, 110);
-    ctx.font = "14px Arial";
-    ctx.fillText(`Resident: ${bin.residentName || "N/A"}`, 180, 135);
-    ctx.fillText(`Owner: ${bin.ownerName || "N/A"}`, 180, 160);
-    ctx.fillText(`Type: ${bin.residentType || "N/A"}`, 180, 185);
-    ctx.fillText(`Location: ${bin.location || "N/A"}`, 180, 210);
-    ctx.fillText(`Collection: ${bin.collectionFrequency || "weekly"}`, 180, 235);
 
-    // Quotes (tri-lingual) with small icons
+    ctx.font = "14px Arial";
+    const lines = [
+      `Resident: ${bin.residentName || "N/A"}`,
+      `Owner: ${bin.ownerName || "N/A"}`,
+      `Type: ${bin.residentType || "N/A"}`,
+      `Location: ${bin.location || "N/A"}`,
+      `Collection: ${bin.collectionFrequency || "weekly"}`,
+    ];
+
+    let y = 135;
+    lines.forEach((line) => {
+      wrapText(ctx, line, 180, y, width - 200, 16);
+      y += 25;
+    });
+
+    // Quotes
     if (showQuotes) {
-      const quotes = customQuotes && Array.isArray(customQuotes) && customQuotes.length
-        ? customQuotes
-        : [
-            { icon: "♻️", text: "Keep your city clean" },
-            { icon: "🌱", text: "ඔබේ නගරය පිරිසිදුව තබා ගන්න" },
-            { icon: "🧹", text: "உங்கள் நகரத்தை சுத்தமாக வைத்திருங்கள்" },
-          ];
+      const quotes =
+        customQuotes && Array.isArray(customQuotes) && customQuotes.length
+          ? customQuotes
+          : [
+              { icon: "♻️", text: "Keep your city clean" },
+              { icon: "🌱", text: "ඔබේ නගරය පිරිසිදුව තබා ගන්න" },
+              { icon: "🧹", text: "உங்கள் நகரத்தை சுத்தமாக வைத்திருங்கள்" },
+            ];
 
       ctx.textAlign = "center";
-      ctx.fillStyle = "#374151"; // gray-700
+      ctx.fillStyle = "#374151";
       ctx.font = "12px Arial";
-      const baseY = height - 46; // start a bit above footer
-      const lineGap = 13;
+      const baseY = height - 48;
+      const lineGap = 14;
       quotes.slice(0, 3).forEach((q, i) => {
-        const y = baseY + i * lineGap;
-        ctx.fillText(`${q.icon}  ${q.text}`, width / 2, y);
+        ctx.fillText(`${q.icon}  ${q.text}`, width / 2, baseY + i * lineGap);
       });
     }
 
     // Footer
     ctx.font = "12px Arial";
-    ctx.fillStyle = "#6B7280"; // gray-500
+    ctx.fillStyle = "#6B7280";
     ctx.textAlign = "center";
     ctx.fillText(footerText, width / 2, height - 12);
 
@@ -108,24 +136,52 @@ export default function QRSticker({
     link.click();
   };
 
+  // ✅ Helper function for wrapping text
+  const wrapText = (ctx, text, x, y, maxWidth, lineHeight) => {
+    const words = text.split(" ");
+    let line = "";
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + " ";
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line, x, y);
+        line = words[n] + " ";
+        y += lineHeight;
+      } else {
+        line = testLine;
+      }
+    }
+    ctx.fillText(line, x, y);
+  };
+
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* Visible small QR preview (for UI) */}
+      {/* Visible small QR preview */}
       {showPreview && (
         <div className="border rounded-lg p-1">
           <QRCodeCanvas
             value={bin?.qrData || ""}
             size={60}
             bgColor="#ffffff"
-            fgColor="#059669"
+            fgColor={t.color}
             level="H"
           />
         </div>
       )}
 
-      {/* Hidden QR renderer used for composition */}
-      <div ref={qrRef} style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}>
-        <QRCodeCanvas value={bin?.qrData || ""} size={160} level="H" bgColor="#ffffff" fgColor={t.color} />
+      {/* Hidden QR renderer */}
+      <div
+        ref={qrRef}
+        style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
+      >
+        <QRCodeCanvas
+          value={bin?.qrData || ""}
+          size={160}
+          level="H"
+          bgColor="#ffffff"
+          fgColor={t.color}
+        />
       </div>
 
       <motion.button
