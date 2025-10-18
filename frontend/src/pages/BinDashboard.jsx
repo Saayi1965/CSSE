@@ -1,14 +1,13 @@
 // src/pages/BinDashboard.jsx
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { QRCodeCanvas } from "qrcode.react";
+// QR preview and sticker handled by QRSticker component
 import toast, { Toaster } from "react-hot-toast";
 import {
   Search,
   Plus,
   Edit,
   Trash2,
-  Download,
   RefreshCw,
   MapPin,
   Calendar,
@@ -24,8 +23,10 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import Header from "../components/SiteHeader";
 
 import api, { updateBin, deleteBin } from "../api/api";
+import QRSticker from "../components/QRSticker";
 
 // ---------- Leaflet default icon fix ----------
 delete L.Icon.Default.prototype._getIconUrl;
@@ -83,7 +84,14 @@ export default function BinDashboard() {
   useEffect(() => {
     const loadBins = async () => {
       try {
-        const res = await api.get("/bins");
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setBins([]);
+          toast.error("You are not logged in. Please log in to view your bins.");
+          return;
+        }
+        const username = localStorage.getItem("username") || "";
+        const res = await api.get(`/bins?ownerName=${encodeURIComponent(username)}`);
         const normalized = (res.data || []).map((b) => ({
           ...b,
           id: b._id?.$oid || b._id || b.binId, // stable key
@@ -113,10 +121,13 @@ export default function BinDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // ---------------- Filtering & sorting ----------------
+  // ---------------- Filtering & sorting (show only my bins) ----------------
   const filteredAndSortedBins = useMemo(() => {
+    const username = localStorage.getItem("username") || "";
     const q = searchQuery.trim().toLowerCase();
-    const filtered = bins.filter((b) => {
+    // Only show bins where ownerName matches logged-in user
+    const myBins = bins.filter((b) => (b.ownerName || "").toLowerCase() === username.toLowerCase());
+    const filtered = myBins.filter((b) => {
       const matchesSearch =
         (b.binId || "").toLowerCase().includes(q) ||
         (b.residentName || "").toLowerCase().includes(q) ||
@@ -295,22 +306,21 @@ export default function BinDashboard() {
     }
   };
 
-  // ---------------- QR download ----------------
-  const downloadQR = (bin) => {
-    const canvas = document.getElementById(`qr-${bin.binId}`);
-    if (!canvas) return;
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png");
-    link.download = `${bin.binType}-${bin.binId}.png`;
-    link.click();
-    toast.success(`🎟️ QR downloaded for ${bin.binId}`);
-  };
+  // QR handled by QRSticker component
 
   // ---------------- Refresh ----------------
   const refreshData = async () => {
     setIsLoading(true);
     try {
-      const res = await api.get("/bins");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setBins([]);
+        toast.error("You are not logged in. Please log in to view your bins.");
+        setIsLoading(false);
+        return;
+      }
+      const username = localStorage.getItem("username") || "";
+      const res = await api.get(`/bins?ownerName=${encodeURIComponent(username)}`);
       const normalized = (res.data || []).map((b) => ({
         ...b,
         id: b._id?.$oid || b._id || b.binId,
@@ -343,7 +353,9 @@ export default function BinDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 p-4 md:p-8">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 p-4 md:p-8">
       <Toaster position="top-right" />
 
       {/* Header */}
@@ -421,7 +433,14 @@ export default function BinDashboard() {
       {mapView ? (
         <div className="border rounded-2xl overflow-hidden shadow-md">
           <MapContainer
-            center={bins.length ? [bins[0].latitude || FALLBACK_CENTER[0], bins[0].longitude || FALLBACK_CENTER[1]] : FALLBACK_CENTER}
+            center={
+              filteredAndSortedBins.length
+                ? [
+                    filteredAndSortedBins[0].latitude || FALLBACK_CENTER[0],
+                    filteredAndSortedBins[0].longitude || FALLBACK_CENTER[1],
+                  ]
+                : FALLBACK_CENTER
+            }
             zoom={12}
             style={{ height: "75vh" }}
           >
@@ -429,10 +448,13 @@ export default function BinDashboard() {
               attribution="&copy; OpenStreetMap contributors"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {bins.map((b) => (
+            {filteredAndSortedBins.map((b) => (
               <Marker
                 key={b.id}
-                position={[b.latitude || FALLBACK_CENTER[0], b.longitude || FALLBACK_CENTER[1]]}
+                position={[
+                  b.latitude || FALLBACK_CENTER[0],
+                  b.longitude || FALLBACK_CENTER[1],
+                ]}
                 icon={getMarkerIcon(b.binType)}
               >
                 <Popup>
@@ -580,25 +602,9 @@ export default function BinDashboard() {
                   </div>
 
                   <div className="p-4 border-t border-gray-100 flex justify-between items-center">
-                    {/* QR Code */}
-                    <div className="flex items-center gap-3">
-                      <div className="border rounded-lg p-1">
-                        <QRCodeCanvas
-                          id={`qr-${b.binId}`}
-                          value={b.qrData || `SMARTWASTE:${b.binId}`}
-                          size={60}
-                          bgColor="#ffffff"
-                          fgColor="#059669"
-                          level="H"
-                        />
-                      </div>
-                      <button
-                        onClick={() => downloadQR(b)}
-                        className="flex items-center gap-1 text-xs text-emerald-600 hover:text-emerald-700 font-medium"
-                      >
-                        <Download size={12} />
-                        Download
-                      </button>
+                    {/* QR preview + Sticker download */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <QRSticker bin={b} />
                     </div>
 
                     {/* Actions */}
@@ -896,6 +902,7 @@ export default function BinDashboard() {
         <p className="mt-1 text-xs">Last updated: {new Date().toLocaleDateString()}</p>
       </motion.footer>
     </div>
+    </>
   );
 }
 
@@ -925,4 +932,5 @@ function MapPicker({ value, onChange, center }) {
       )}
     </MapContainer>
   );
+  
 }

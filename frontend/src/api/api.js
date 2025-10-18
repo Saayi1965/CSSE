@@ -21,8 +21,11 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
     const url = config.url || "";
+    // Only treat real auth endpoints as public (no token). Avoid generic matches like 
+    // "/bins/register" which previously disabled the Authorization header.
+    const pathOnly = (url.split("?")[0] || "").toLowerCase();
     const isAuthEndpoint =
-      url.includes("/auth") || url.includes("/login") || url.includes("/register");
+      pathOnly.startsWith("/auth") || pathOnly === "/login" || pathOnly === "/signup";
 
     if (token && !isAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;

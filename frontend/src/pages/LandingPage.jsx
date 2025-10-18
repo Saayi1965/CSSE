@@ -246,7 +246,7 @@ export default function LandingPage() {
       {/* 🔻 Footer */}
       <footer className="bg-gray-900 text-white py-10 text-center">
         <p className="text-gray-400 text-sm">
-          © 2025 Smart Waste Management System | Designed by Jathusan & Team 🌿
+          © 2025 Smart Waste Management System | Designed by Group 13 🌿
         </p>
       </footer>
     </div>
